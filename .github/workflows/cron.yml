@@ -2,18 +2,31 @@ name: Check Trackings
 
 on:
   schedule:
-    # Chạy mỗi 15 phút
     - cron: "*/15 * * * *"
-  workflow_dispatch: # Cho phép chạy tay từ GitHub UI
+  workflow_dispatch:
 
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Debug - Print URL (masked)
+        run: |
+          echo "APP_URL length: ${#APP_URL}"
+          echo "APP_URL starts with: ${APP_URL:0:8}"
+          echo "CRON_SECRET length: ${#CRON_SECRET}"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
       - name: Call cron endpoint
         run: |
-          curl -s -X GET \
-            "${{ secrets.APP_URL }}/api/cron/check-trackings" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -w "\nHTTP Status: %{http_code}\n"
+          curl -v -X GET \
+            "${APP_URL}/api/cron/check-trackings" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -w "\nHTTP Status: %{http_code}\n" \
+            --max-time 30 \
+            || echo "curl exit code: $?"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
