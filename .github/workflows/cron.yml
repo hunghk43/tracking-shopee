@@ -10,29 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check secrets exist
+      - name: Debug URL
         run: |
-          if [ -z "$APP_URL" ]; then
-            echo "❌ APP_URL is EMPTY"
-            exit 1
-          fi
-          if [ -z "$CRON_SECRET" ]; then
-            echo "❌ CRON_SECRET is EMPTY"
-            exit 1
-          fi
-          echo "✅ APP_URL length: ${#APP_URL}"
-          echo "✅ CRON_SECRET length: ${#CRON_SECRET}"
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-
-      - name: Test DNS resolve
-        run: |
-          # Extract hostname từ URL
-          HOSTNAME=$(echo "$APP_URL" | sed 's|https\?://||' | cut -d'/' -f1)
-          echo "Hostname to resolve: $HOSTNAME"
-          nslookup "$HOSTNAME" || echo "DNS lookup failed"
-          curl -v --max-time 10 "$APP_URL" 2>&1 | head -30
+          echo "Length: ${#APP_URL}"
+          # In hex để phát hiện ký tự ẩn
+          echo -n "$APP_URL" | xxd | head -5
+          # Test curl thẳng với URL cứng để loại trừ vấn đề secret
+          echo "---"
+          echo "Testing with hardcoded URL..."
+          curl -s -o /dev/null -w "Hardcoded test: %{http_code}\n" \
+            "https://tracking-shopee.vercel.app/api/cron/check-trackings" \
+            --max-time 10 || echo "Hardcoded curl exit: $?"
+          echo "---"
+          echo "Testing with secret URL..."
+          curl -s -o /dev/null -w "Secret test: %{http_code}\n" \
+            "${APP_URL}/api/cron/check-trackings" \
+            --max-time 10 || echo "Secret curl exit: $?"
         env:
           APP_URL: ${{ secrets.APP_URL }}
 
