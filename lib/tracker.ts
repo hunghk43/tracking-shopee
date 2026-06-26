@@ -21,16 +21,18 @@ function isDeliveredStatus(status: string): boolean {
 function fmtIso(isoStr: string | null | undefined): string | null {
   if (!isoStr) return null;
   try {
-    const clean = isoStr.replace("Z", "+00:00");
-    const dt = new Date(clean);
-    // Convert to Vietnam time (UTC+7)
-    const vnTime = new Date(dt.getTime() + 7 * 60 * 60 * 1000);
-    const hh = vnTime.getUTCHours().toString().padStart(2, "0");
-    const mm = vnTime.getUTCMinutes().toString().padStart(2, "0");
-    const dd = vnTime.getUTCDate().toString().padStart(2, "0");
-    const mo = (vnTime.getUTCMonth() + 1).toString().padStart(2, "0");
-    const yy = vnTime.getUTCFullYear();
-    return `${hh}:${mm} ${dd}/${mo}/${yy}`;
+    const dt = new Date(isoStr);
+    if (isNaN(dt.getTime())) return isoStr.slice(0, 19);
+    // Dùng Intl để format đúng múi giờ VN, không tự cộng UTC+7
+    return dt.toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour12: false,
+    });
   } catch {
     return isoStr.slice(0, 19);
   }
@@ -40,8 +42,16 @@ function fmtTimestamp(ts: number | string | null | undefined): string | null {
   if (!ts) return null;
   try {
     const d = new Date(Number(ts) * 1000);
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour12: false,
+    });
   } catch {
     return null;
   }
