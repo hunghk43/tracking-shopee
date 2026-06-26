@@ -13,18 +13,28 @@ jobs:
       - name: Check secrets exist
         run: |
           if [ -z "$APP_URL" ]; then
-            echo "❌ APP_URL is EMPTY - please add it in repo Settings > Secrets"
+            echo "❌ APP_URL is EMPTY"
             exit 1
           fi
           if [ -z "$CRON_SECRET" ]; then
-            echo "❌ CRON_SECRET is EMPTY - please add it in repo Settings > Secrets"
+            echo "❌ CRON_SECRET is EMPTY"
             exit 1
           fi
-          echo "✅ APP_URL is set (${#APP_URL} chars, starts with: ${APP_URL:0:10}...)"
-          echo "✅ CRON_SECRET is set (${#CRON_SECRET} chars)"
+          echo "✅ APP_URL length: ${#APP_URL}"
+          echo "✅ CRON_SECRET length: ${#CRON_SECRET}"
         env:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      - name: Test DNS resolve
+        run: |
+          # Extract hostname từ URL
+          HOSTNAME=$(echo "$APP_URL" | sed 's|https\?://||' | cut -d'/' -f1)
+          echo "Hostname to resolve: $HOSTNAME"
+          nslookup "$HOSTNAME" || echo "DNS lookup failed"
+          curl -v --max-time 10 "$APP_URL" 2>&1 | head -30
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
 
       - name: Call cron endpoint
         run: |
