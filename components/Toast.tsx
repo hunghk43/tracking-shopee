@@ -43,7 +43,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border p-4 shadow-2xl backdrop-blur-sm min-w-[300px] max-w-[380px] cursor-pointer
+      className={`flex items-start gap-3 rounded-xl border p-4 shadow-2xl backdrop-blur-sm w-full min-w-[280px] max-w-[380px] cursor-pointer
         ${COLORS[toast.type]} ${exiting ? "toast-out" : "toast-in"}`}
       onClick={handleRemove}
     >
@@ -61,7 +61,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
 
 export default function ToastContainer({ toasts, onRemove }: Props) {
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-[calc(100vw-2rem)]">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onRemove={onRemove} />
       ))}

@@ -377,14 +377,35 @@ export default function HomePage() {
           )}
         </div>
 
+        {/* Mobile detail overlay (bottom sheet) */}
+        {showPanel && (
+          <div className="lg:hidden fixed inset-0 z-30 flex flex-col justify-end">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => { setSelectedTracking(null); setDetailResult(null); }}
+            />
+            <div className="relative bg-slate-800 rounded-t-2xl border-t border-slate-700 shadow-2xl slide-in-up max-h-[90vh] flex flex-col">
+              <TrackingDetail
+                tracking={selectedTracking!}
+                result={detailResult}
+                loading={detailLoading}
+                onRefresh={() => handleRefresh(selectedTracking!)}
+                onDelete={() => setDeleteTarget(selectedTracking)}
+                onEditNote={(note) => handleEditNote(selectedTracking!, note)}
+                onClose={() => { setSelectedTracking(null); setDetailResult(null); }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Layout: list + detail panel */}
         <div className="flex gap-4 items-start">
           {/* Left: list */}
           <div className={`${showPanel ? "lg:w-[400px] xl:w-[440px] shrink-0" : "w-full"} transition-all duration-300`}>
 
             {/* Search + bulk actions */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="relative flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="relative flex-1 min-w-0">
                 <input
                   type="text"
                   value={searchQuery}
@@ -398,12 +419,12 @@ export default function HomePage() {
                 )}
               </div>
               {filter === "delivered" && stats.delivered > 0 && (
-                <button onClick={() => setBulkDeleteType("delivered")} className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all whitespace-nowrap">
+                <button onClick={() => setBulkDeleteType("delivered")} className="shrink-0 px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all whitespace-nowrap">
                   🗑 Xóa tất cả
                 </button>
               )}
               {filter === "cancelled" && (stats.cancelled + stats.returned) > 0 && (
-                <button onClick={() => setBulkDeleteType("cancelled")} className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all whitespace-nowrap">
+                <button onClick={() => setBulkDeleteType("cancelled")} className="shrink-0 px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all whitespace-nowrap">
                   🗑 Xóa tất cả
                 </button>
               )}
@@ -475,11 +496,11 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Right: detail panel */}
+          {/* Right: detail panel — desktop only */}
           {showPanel && (
             <div
               ref={detailPanelRef}
-              className="flex-1 min-w-0 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden slide-in-right lg:sticky lg:top-[68px] lg:max-h-[calc(100vh-84px)]"
+              className="hidden lg:flex flex-1 min-w-0 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden slide-in-right lg:sticky lg:top-[68px] lg:max-h-[calc(100vh-84px)] flex-col"
             >
               <TrackingDetail
                 tracking={selectedTracking!}
