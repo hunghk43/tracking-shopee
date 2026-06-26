@@ -15,7 +15,8 @@ const MAX_TRACKINGS = 100;
 // GET /api/trackings?user_id=xxx
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("user_id");
-  if (!userId) return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+  if (!userId || userId.length > 64)
+    return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
 
   const sb = createServerSupabase();
   const trackings = await dbListUser(sb, userId);
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
   const { user_id, carrier, tracking_code, nickname } = body;
   if (!user_id || !carrier || !tracking_code) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+  if (typeof user_id !== "string" || user_id.length > 64) {
+    return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
   }
 
   // Validate carrier

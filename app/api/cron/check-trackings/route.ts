@@ -62,6 +62,8 @@ async function sendPushNotification(
   }
 }
 
+export const maxDuration = 55; // Vercel Hobby max = 60s, để dư 5s
+
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
 
   await dbAutoArchiveOld(sb);
 
-  const items = await dbGetToCheck(sb, 200);
+  const items = await dbGetToCheck(sb, 50); // Giới hạn 50 đơn/lần để tránh timeout 60s
   console.log(`[CRON] Checking ${items.length} trackings...`);
 
   let updated = 0;

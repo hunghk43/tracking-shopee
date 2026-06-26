@@ -211,17 +211,17 @@ export async function dbArchiveDelivered(
 ): Promise<number> {
   const { data } = await sb
     .from("trackings")
-    .select("id, last_status")
+    .select("id, last_status, is_delivered")
     .eq("user_id", userId)
     .eq("is_archived", false);
 
   if (!data) return 0;
 
   const toArchive = data
-    .filter((t: { id: string; last_status: string | null; is_delivered?: boolean }) => {
+    .filter((t: { id: string; last_status: string | null; is_delivered: boolean }) => {
       const s = (t.last_status || "").toLowerCase();
       return (
-        (t as { is_delivered?: boolean }).is_delivered ||
+        t.is_delivered ||
         s.includes("giao hàng thành công") ||
         s.includes("delivered")
       );

@@ -12,19 +12,18 @@ self.addEventListener("push", (event) => {
     data = { title: "Thông báo vận đơn", body: event.data.text() };
   }
 
+  const isDelivered = data.data?.new_status &&
+    (data.data.new_status.toLowerCase().includes("giao hàng thành công") ||
+     data.data.new_status.toLowerCase().includes("delivered"));
+
   const options = {
     body: data.body || "",
-    icon: "/icon-192.png",
-    badge: "/badge-72.png",
     vibrate: [200, 100, 200],
     data: data.data || {},
-    actions: [
-      { action: "view", title: "Xem ngay" },
-      { action: "dismiss", title: "Bỏ qua" },
-    ],
-    requireInteraction: false,
+    requireInteraction: isDelivered, // Giữ notification trên màn hình nếu đã giao
     tag: `tracking-${data.data?.tracking_code || Date.now()}`,
     renotify: true,
+    timestamp: Date.now(),
   };
 
   event.waitUntil(
@@ -35,22 +34,27 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  if (event.action === "dismiss") return;
-
-  const urlToOpen = new URL("/", self.location.origin).href;
+  const urlToOpen = self.location.origin + "/";
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
+        // Focus tab đang mở nếu có
         for (const client of clientList) {
-          if (client.url === urlToOpen && "focus" in client) {
+          if (client.url.startsWith(self.location.origin) && "focus" in client) {
             return client.focus();
           }
         }
+        // Mở tab mới
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
       })
   );
+});
+
+// Background sync - đồng bộ khi có mạng trở lại (optional)
+self.addEventListener("online", () => {
+  console.log("[SW] Back online");
 });

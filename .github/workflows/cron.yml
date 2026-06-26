@@ -10,23 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Debug - Print URL (masked)
-        run: |
-          echo "APP_URL length: ${#APP_URL}"
-          echo "APP_URL starts with: ${APP_URL:0:8}"
-          echo "CRON_SECRET length: ${#CRON_SECRET}"
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-
       - name: Call cron endpoint
         run: |
-          curl -v -X GET \
-            "${APP_URL}/api/cron/check-trackings" \
+          RESPONSE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+            -X GET "${APP_URL}/api/cron/check-trackings" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            -w "\nHTTP Status: %{http_code}\n" \
-            --max-time 30 \
-            || echo "curl exit code: $?"
+            --max-time 55)
+          echo "HTTP Status: $RESPONSE"
+          cat /tmp/response.txt
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Error: Expected 200 but got $RESPONSE"
+            exit 1
+          fi
         env:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
