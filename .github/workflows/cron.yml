@@ -10,6 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check secrets exist
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "❌ APP_URL is EMPTY - please add it in repo Settings > Secrets"
+            exit 1
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "❌ CRON_SECRET is EMPTY - please add it in repo Settings > Secrets"
+            exit 1
+          fi
+          echo "✅ APP_URL is set (${#APP_URL} chars, starts with: ${APP_URL:0:10}...)"
+          echo "✅ CRON_SECRET is set (${#CRON_SECRET} chars)"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
       - name: Call cron endpoint
         run: |
           RESPONSE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
@@ -19,9 +35,10 @@ jobs:
           echo "HTTP Status: $RESPONSE"
           cat /tmp/response.txt
           if [ "$RESPONSE" != "200" ]; then
-            echo "Error: Expected 200 but got $RESPONSE"
+            echo "❌ Expected 200 but got $RESPONSE"
             exit 1
           fi
+          echo "✅ Cron completed successfully"
         env:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
