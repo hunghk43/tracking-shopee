@@ -1,0 +1,19 @@
+name: Check Trackings
+
+on:
+  schedule:
+    # Chạy mỗi 15 phút
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # Cho phép chạy tay từ GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call cron endpoint
+        run: |
+          curl -s -X GET \
+            "${{ secrets.APP_URL }}/api/cron/check-trackings" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP Status: %{http_code}\n"
