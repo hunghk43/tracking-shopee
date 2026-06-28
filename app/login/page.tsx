@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase";
 
 type Mode = "login" | "register" | "forgot";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,33 +29,38 @@ export default function LoginPage() {
       if (mode === "login") {
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Middleware tự redirect về /
+        router.push("/");
+        router.refresh();
 
       } else if (mode === "register") {
         if (password !== confirmPassword) throw new Error("Mật khẩu xác nhận không khớp");
         if (password.length < 6) throw new Error("Mật khẩu phải ít nhất 6 ký tự");
 
-        const { error } = await sb.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        });
+        const { data, error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
-        setSuccess("✅ Đăng ký thành công! Kiểm tra email để xác nhận tài khoản.");
+
+        // Nếu confirm email đã tắt → session có sẵn, redirect luôn
+        if (data.session) {
+          router.push("/");
+          router.refresh();
+        } else {
+          // Confirm email còn bật → báo user check email
+          setSuccess("✅ Đăng ký thành công! Kiểm tra email để xác nhận tài khoản rồi đăng nhập.");
+          setMode("login");
+        }
 
       } else if (mode === "forgot") {
         const { error } = await sb.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/`,
         });
         if (error) throw error;
         setSuccess("✅ Đã gửi link đặt lại mật khẩu vào email của bạn.");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      // Dịch lỗi tiếng Anh của Supabase sang tiếng Việt
       if (msg.includes("Invalid login credentials")) setError("Email hoặc mật khẩu không đúng");
       else if (msg.includes("Email not confirmed")) setError("Email chưa được xác nhận. Kiểm tra hộp thư của bạn.");
-      else if (msg.includes("User already registered")) setError("Email này đã được đăng ký");
+      else if (msg.includes("User already registered")) setError("Email này đã được đăng ký. Hãy đăng nhập.");
       else if (msg.includes("Password should be")) setError("Mật khẩu phải ít nhất 6 ký tự");
       else setError(msg);
     } finally {
