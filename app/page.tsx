@@ -15,6 +15,7 @@ import QuickTrackModal from "@/components/QuickTrackModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import ToastContainer from "@/components/Toast";
 import PushNotificationBtn from "@/components/PushNotificationBtn";
+import CronStatusBar from "@/components/CronStatusBar";
 
 const MAX_TRACKINGS = 100;
 
@@ -263,6 +264,8 @@ export default function HomePage() {
           {/* Actions */}
           <div className="flex items-center gap-1.5">
             {userId && <PushNotificationBtn userId={userId} onToast={addToast} />}
+
+            {userId && <CronStatusBar userId={userId} />}
 
             <button onClick={() => setQuickTrackModal(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium transition-all">
