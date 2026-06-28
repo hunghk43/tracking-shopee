@@ -1,7 +1,7 @@
 -- ==================== TRACKINGS ====================
 CREATE TABLE IF NOT EXISTS trackings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   carrier TEXT NOT NULL CHECK (carrier IN ('ghn', 'spx')),
   tracking_code TEXT NOT NULL,
   nickname TEXT,
@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS trackings (
   UNIQUE (user_id, carrier, tracking_code)
 );
 
--- Indexes
 CREATE INDEX IF NOT EXISTS idx_trackings_user ON trackings (user_id, is_archived);
 CREATE INDEX IF NOT EXISTS idx_trackings_active ON trackings (is_archived, is_delivered, last_checked_at);
 CREATE INDEX IF NOT EXISTS idx_trackings_display ON trackings (user_id, display_id, is_archived);
@@ -23,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_trackings_display ON trackings (user_id, display_
 -- ==================== PUSH SUBSCRIPTIONS ====================
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   endpoint TEXT NOT NULL UNIQUE,
   keys JSONB NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -32,16 +31,9 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 
 CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions (user_id);
 
--- ==================== RLS (Row Level Security) ====================
--- Bật RLS (nếu dùng service role key trong API thì không cần thiết,
--- nhưng nên bật cho bảo mật)
-
+-- ==================== RLS ====================
 ALTER TABLE trackings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
--- Service role bypass all RLS (API routes dùng service role key nên OK)
--- Không cần thêm policy khi chỉ truy cập qua server API với service role key.
-
--- ==================== USEFUL VIEWS ====================
-CREATE OR REPLACE VIEW active_trackings AS
-  SELECT * FROM trackings WHERE is_archived = FALSE;
+-- Service role bypasses RLS automatically
+-- Policies cho client (anon key) nếu cần sau này
