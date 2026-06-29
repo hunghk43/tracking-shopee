@@ -154,7 +154,7 @@ function CronModal({
           {!isHealthy && status.last_checked_at && (
             <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl px-3 py-2.5">
               <p className="text-xs text-orange-400">
-                ⚠️ Lần quét cuối hơn 25 phút. App đang tự kích hoạt quét bù khi bạn mở tab.
+                ⚠️ Lần quét cuối hơn 8 phút. App đang tự kích hoạt quét bù khi bạn mở tab.
               </p>
             </div>
           )}
@@ -206,7 +206,7 @@ export default function CronStatusBar({ userId }: Props) {
   if (!status || !mounted) return null;
 
   const isHealthy = status.last_checked_at
-    ? Date.now() - new Date(status.last_checked_at).getTime() < 25 * 60 * 1000
+    ? Date.now() - new Date(status.last_checked_at).getTime() < 8 * 60 * 1000
     : false;
 
   return (

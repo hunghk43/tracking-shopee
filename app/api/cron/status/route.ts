@@ -41,6 +41,6 @@ export async function GET(req: NextRequest) {
     last_checked_at: lastChecked?.last_checked_at || null,
     active_count: activeCount || 0,
     updated_today: updatedToday || 0,
-    interval_minutes: 15,
+    interval_minutes: 5,
   });
 }

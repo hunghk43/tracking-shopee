@@ -123,8 +123,8 @@ export default function HomePage() {
 
         const minutesSinceLastCheck = (Date.now() - new Date(status.last_checked_at).getTime()) / 60000;
 
-        // Nếu quá 18 phút chưa quét → trigger cron ngay
-        if (minutesSinceLastCheck >= 18 && status.active_count > 0) {
+        // Nếu quá 8 phút chưa quét → trigger cron ngay (cron-job.org chạy mỗi 5p)
+        if (minutesSinceLastCheck >= 8 && status.active_count > 0) {
           console.log(`[Client Cron] Last check ${minutesSinceLastCheck.toFixed(1)}m ago, triggering...`);
           const cronRes = await fetch("/api/cron/check-trackings");
           if (cronRes.ok) {
