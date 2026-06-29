@@ -28,6 +28,8 @@ export interface TrackHistory {
   status: string;
   location: string;
   next_location?: string;
+  next_lat?: string;
+  next_lng?: string;
   milestone_code?: number;
   reason?: string;
 }
@@ -52,6 +54,7 @@ export interface TrackResult {
   sms_logs?: SmsLog[];
   order_info?: Record<string, unknown>;
   milestone_code?: number;
+  shopee_order_id?: string;
   error?: string;
 }
 

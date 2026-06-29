@@ -149,6 +149,24 @@ export default function TrackingDetail({
           <>
             {result.ok ? (
               <>
+                {/* SPX: Mã đơn Shopee */}
+                {t.carrier === "spx" && result.shopee_order_id && (
+                  <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-slate-400 mb-0.5">🛍 Mã đơn Shopee</div>
+                      <div className="text-sm font-mono text-orange-300 select-all">
+                        {result.shopee_order_id}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(result.shopee_order_id!).then(() => alert("Đã copy!"))}
+                      className="text-xs text-orange-400 hover:text-orange-300 px-2 py-1 rounded-lg hover:bg-orange-500/10 transition-colors shrink-0"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                )}
+
                 {/* SPX Progress bar */}
                 {t.carrier === "spx" && result.milestone_code !== undefined && (
                   <SpxProgressBar
@@ -232,7 +250,21 @@ export default function TrackingDetail({
                               )}
                               {/* Địa điểm tiếp theo (SPX) */}
                               {h.next_location && (
-                                <div className="text-xs text-slate-600 mt-0.5">➡️ {h.next_location}</div>
+                                <div className="flex items-start gap-1 mt-0.5">
+                                  <span className="text-xs text-slate-600 shrink-0">➡️</span>
+                                  <span className="text-xs text-slate-600">{h.next_location}</span>
+                                  {h.next_lat && h.next_lng && (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${h.next_lat},${h.next_lng}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="ml-1 text-xs text-blue-500 hover:text-blue-400 shrink-0 transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      🗺 Maps
+                                    </a>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>

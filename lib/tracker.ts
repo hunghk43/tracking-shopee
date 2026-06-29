@@ -296,6 +296,9 @@ export async function trackSpx(code: string): Promise<TrackResult> {
   ) || {};
   const records = (slsInfo.records as Record<string, unknown>[]) || [];
 
+  // Mã đơn Shopee (client_order_id)
+  const shopeeOrderId = (slsInfo.client_order_id as string) || undefined;
+
   if (!records.length) {
     return { ok: false, error: "Đơn này chưa có dữ liệu hành trình" };
   }
@@ -327,6 +330,8 @@ export async function trackSpx(code: string): Promise<TrackResult> {
                 (curLoc?.full_address as string) || "";
     const nextLocStr = (nextLoc?.full_address as string) ||
                        (nextLoc?.location_name as string) || "";
+    const nextLat = (nextLoc?.lat as string) || undefined;
+    const nextLng = (nextLoc?.lng as string) || undefined;
 
     // Lý do (nếu có, vd: "Không lấy kịp")
     const reason = (ev.reason_desc as string) || "";
@@ -336,6 +341,8 @@ export async function trackSpx(code: string): Promise<TrackResult> {
       status: desc,
       location: loc,
       next_location: nextLocStr || undefined,
+      next_lat: nextLat && nextLat !== "" ? nextLat : undefined,
+      next_lng: nextLng && nextLng !== "" ? nextLng : undefined,
       milestone_code: (ev.milestone_code as number) || undefined,
       reason: reason || undefined,
     });
@@ -357,6 +364,7 @@ export async function trackSpx(code: string): Promise<TrackResult> {
     call_logs: [],
     sms_logs: [],
     milestone_code: currentMilestone,
+    shopee_order_id: shopeeOrderId,
     error: undefined,
   };
 }
