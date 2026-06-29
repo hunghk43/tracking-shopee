@@ -9,6 +9,7 @@ import {
   dbMarkChecked,
 } from "@/lib/db";
 import { doTrack } from "@/lib/tracker";
+import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 
 const MAX_TRACKINGS = 100;
 
@@ -17,6 +18,11 @@ export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("user_id");
   if (!userId || userId.length > 64)
     return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+
+  // Rate limit: 60 requests/phút per user
+  const rl = checkRateLimit(`get:${userId}`, 60, 60_000);
+  if (!rl.allowed)
+    return NextResponse.json({ error: "Quá nhiều request, thử lại sau" }, { status: 429 });
 
   const sb = createServerSupabase();
   const trackings = await dbListUser(sb, userId);
@@ -27,6 +33,12 @@ export async function GET(req: NextRequest) {
 
 // POST /api/trackings  body: { user_id, carrier, tracking_code, nickname? }
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 lần thêm đơn/phút per IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`add:${ip}`, 10, 60_000);
+  if (!rl.allowed)
+    return NextResponse.json({ error: "Quá nhiều request, thử lại sau 1 phút" }, { status: 429 });
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 

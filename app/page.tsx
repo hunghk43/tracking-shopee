@@ -345,8 +345,14 @@ export default function HomePage() {
                     <p className="text-xs text-slate-400">Đăng nhập với</p>
                     <p className="text-sm text-white font-medium truncate">{user?.email}</p>
                   </div>
+                  <button
+                    onClick={() => { setShowUserMenu(false); router.push("/settings"); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 transition-colors text-left"
+                  >
+                    ⚙️ Cài đặt tài khoản
+                  </button>
                   <button onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left border-t border-slate-700">
                     🚪 Đăng xuất
                   </button>
                 </div>

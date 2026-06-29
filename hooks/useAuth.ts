@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "@/lib/supabase";
 
@@ -17,19 +17,26 @@ export function useAuth() {
     });
 
     const { data: { subscription } } = sb.auth.onAuthStateChange(
-      (_event: AuthChangeEvent, session: Session | null) => {
+      (event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Token hết hạn → redirect login
+        if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED" && !session) {
+          if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
+        }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     const sb = getSupabaseBrowser();
     await sb.auth.signOut();
-  }
+  }, []);
 
   return { user, loading, signOut };
 }
