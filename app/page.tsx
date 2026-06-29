@@ -97,11 +97,59 @@ export default function HomePage() {
   }, [userId]);
 
   useEffect(() => { if (userId) loadData(); }, [userId, loadData]);
+
+  // Auto refresh data mỗi 2 phút khi tab đang active
   useEffect(() => {
     if (!userId) return;
-    const t = setInterval(() => loadData(true), 5 * 60 * 1000);
+    const t = setInterval(() => loadData(true), 2 * 60 * 1000);
     return () => clearInterval(t);
   }, [userId, loadData]);
+
+  // Smart client-side cron: nếu user đang mở app và last_checked quá 18 phút
+  // → tự gọi cron endpoint thay vì chờ GitHub Actions
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkAndTriggerCron = async () => {
+      // Chỉ chạy khi tab đang focus
+      if (document.hidden) return;
+
+      try {
+        const res = await fetch(`/api/cron/status?user_id=${userId}`);
+        if (!res.ok) return;
+        const status = await res.json();
+
+        if (!status.last_checked_at) return;
+
+        const minutesSinceLastCheck = (Date.now() - new Date(status.last_checked_at).getTime()) / 60000;
+
+        // Nếu quá 18 phút chưa quét → trigger cron ngay
+        if (minutesSinceLastCheck >= 18 && status.active_count > 0) {
+          console.log(`[Client Cron] Last check ${minutesSinceLastCheck.toFixed(1)}m ago, triggering...`);
+          const cronRes = await fetch("/api/cron/check-trackings");
+          if (cronRes.ok) {
+            await loadData(true);
+          }
+        }
+      } catch { /* ignore */ }
+    };
+
+    // Check ngay khi mount, sau đó mỗi 3 phút
+    checkAndTriggerCron();
+    const t = setInterval(checkAndTriggerCron, 3 * 60 * 1000);
+
+    // Check lại khi user quay lại tab
+    const onVisibilityChange = () => {
+      if (!document.hidden) checkAndTriggerCron();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const filteredTrackings = trackings.filter((t) => {
     if (searchQuery) {

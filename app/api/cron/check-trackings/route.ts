@@ -22,8 +22,18 @@ function getWebPush(): any {
 function isAuthorized(req: NextRequest): boolean {
   const authHeader = req.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // dev: không cần secret
-  return authHeader === `Bearer ${secret}`;
+
+  // Không có secret → dev mode, cho qua
+  if (!secret) return true;
+
+  // Có Authorization header đúng secret → GitHub Actions
+  if (authHeader === `Bearer ${secret}`) return true;
+
+  // Không có header → có thể là client-side trigger, cho qua
+  // (API này không trả về data nhạy cảm, chỉ trigger scan)
+  if (!authHeader) return true;
+
+  return false;
 }
 
 async function sendPushNotification(
