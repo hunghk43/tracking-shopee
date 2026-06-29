@@ -318,12 +318,30 @@ export async function trackSpx(code: string): Promise<TrackResult> {
     )
       continue;
     const t = fmtTimestamp(ev.actual_time as number | string | null) || "";
-    const desc =
-      ((ev.buyer_description || ev.description) as string) || "";
-    const locObj = ev.current_location as Record<string, unknown> | null;
-    const loc = (locObj?.location_name as string) || "";
-    history.push({ time: t, status: desc, location: loc });
+    const desc = ((ev.buyer_description || ev.description) as string) || "";
+
+    // current_location hoặc next_location (SPX thường để current trống, next mới có data)
+    const curLoc = ev.current_location as Record<string, unknown> | null;
+    const nextLoc = ev.next_location as Record<string, unknown> | null;
+    const loc = (curLoc?.location_name as string) ||
+                (curLoc?.full_address as string) || "";
+    const nextLocStr = (nextLoc?.full_address as string) ||
+                       (nextLoc?.location_name as string) || "";
+
+    // Lý do (nếu có, vd: "Không lấy kịp")
+    const reason = (ev.reason_desc as string) || "";
+
+    history.push({
+      time: t,
+      status: desc,
+      location: loc,
+      next_location: nextLocStr || undefined,
+      milestone_code: (ev.milestone_code as number) || undefined,
+      reason: reason || undefined,
+    });
   }
+
+  const currentMilestone = (latest.milestone_code as number) || 0;
 
   const delivered =
     (latest.milestone_code as number) === 8 ||
@@ -338,6 +356,7 @@ export async function trackSpx(code: string): Promise<TrackResult> {
     history,
     call_logs: [],
     sms_logs: [],
+    milestone_code: currentMilestone,
     error: undefined,
   };
 }

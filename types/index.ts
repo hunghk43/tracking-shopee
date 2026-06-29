@@ -27,6 +27,9 @@ export interface TrackHistory {
   time: string;
   status: string;
   location: string;
+  next_location?: string;
+  milestone_code?: number;
+  reason?: string;
 }
 
 export interface CallLog {
@@ -48,6 +51,7 @@ export interface TrackResult {
   call_logs?: CallLog[];
   sms_logs?: SmsLog[];
   order_info?: Record<string, unknown>;
+  milestone_code?: number;
   error?: string;
 }
 

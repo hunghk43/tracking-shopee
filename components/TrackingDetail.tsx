@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Tracking, TrackResult } from "@/types";
 import { carrierDisplay } from "@/lib/tracker";
 import StatusBadge from "./StatusBadge";
+import SpxProgressBar from "./SpxProgressBar";
 
 interface Props {
   tracking: Tracking;
@@ -38,6 +39,11 @@ export default function TrackingDetail({
   };
 
   const orderInfo = result?.order_info as Record<string, string> | undefined;
+
+  function isStatusCancelledOrReturnedLocal(status?: string): boolean {
+    const s = (status || "").toLowerCase();
+    return s.includes("huỷ") || s.includes("hủy") || s.includes("cancel") || s.includes("hoàn");
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -143,6 +149,14 @@ export default function TrackingDetail({
           <>
             {result.ok ? (
               <>
+                {/* SPX Progress bar */}
+                {t.carrier === "spx" && result.milestone_code !== undefined && (
+                  <SpxProgressBar
+                    milestoneCode={result.milestone_code}
+                    isCancelled={isStatusCancelledOrReturnedLocal(result.status)}
+                  />
+                )}
+
                 {/* Current status */}
                 <div className={`rounded-xl p-4 border ${
                   result.is_delivered
@@ -190,12 +204,10 @@ export default function TrackingDetail({
                       📜 Hành trình
                     </div>
                     <div className="relative">
-                      {/* Timeline line */}
                       <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-700" />
                       <div className="space-y-4 pl-7">
                         {[...result.history].reverse().map((h, i) => (
                           <div key={i} className="relative fade-in">
-                            {/* Dot */}
                             <div className={`absolute -left-5 top-1 w-3 h-3 rounded-full border-2 ${
                               i === 0
                                 ? "bg-blue-500 border-blue-400"
@@ -208,8 +220,19 @@ export default function TrackingDetail({
                               <div className={`text-sm font-medium ${
                                 i === 0 ? "text-blue-300" : "text-slate-300"
                               }`}>{h.status}</div>
+                              {/* Lý do thất bại (nếu có) */}
+                              {h.reason && (
+                                <div className="text-xs text-orange-400 mt-0.5">
+                                  ⚠️ {h.reason}
+                                </div>
+                              )}
+                              {/* Địa điểm hiện tại */}
                               {h.location && (
                                 <div className="text-xs text-slate-500 mt-0.5">📍 {h.location}</div>
+                              )}
+                              {/* Địa điểm tiếp theo (SPX) */}
+                              {h.next_location && (
+                                <div className="text-xs text-slate-600 mt-0.5">➡️ {h.next_location}</div>
                               )}
                             </div>
                           </div>
