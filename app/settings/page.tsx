@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import type { Tracking } from "@/types";
+
+interface PersonalStats {
+  totalEver: number;
+  avgDeliveryDays: number | null;
+  fastestDays: number | null;
+  totalDelivered: number;
+}
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -14,6 +22,41 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [personalStats, setPersonalStats] = useState<PersonalStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Fetch thống kê cá nhân từ toàn bộ lịch sử (kể cả archived)
+  useEffect(() => {
+    if (!user?.id) {
+      // Auth chưa load xong, không set false vội
+      return;
+    }
+    setStatsLoading(true);
+    fetch(`/api/trackings?user_id=${user.id}&include_archived=true`)
+      .then(r => r.json())
+      .then(data => {
+        const all: Tracking[] = data.trackings || [];
+        const delivered = all.filter(t =>
+          t.is_delivered && t.created_at && t.last_checked_at
+        );
+        const days = delivered
+          .map(t => Math.floor(
+            (new Date(t.last_checked_at!).getTime() - new Date(t.created_at).getTime()) / 86400000
+          ))
+          .filter(d => d >= 0 && d <= 60);
+
+        setPersonalStats({
+          totalEver: all.length,
+          avgDeliveryDays: days.length > 0
+            ? Math.round(days.reduce((a, b) => a + b, 0) / days.length)
+            : null,
+          fastestDays: days.length > 0 ? Math.min(...days) : null,
+          totalDelivered: delivered.length,
+        });
+      })
+      .catch(() => setPersonalStats(null))
+      .finally(() => setStatsLoading(false));
+  }, [user?.id]);
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -92,6 +135,78 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Personal stats */}
+        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-700">
+            <h2 className="text-sm font-semibold text-white">📊 Thống kê của bạn</h2>
+          </div>
+          {statsLoading ? (
+            <div className="p-5 grid grid-cols-3 gap-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-slate-900/60 rounded-xl p-3 text-center space-y-2">
+                  <div className="skeleton h-8 w-12 mx-auto rounded" />
+                  <div className="skeleton h-3 w-16 mx-auto rounded" />
+                </div>
+              ))}
+            </div>
+          ) : personalStats ? (
+            <>
+              <div className="p-5 grid grid-cols-3 gap-3">
+                {/* Tổng đơn đã theo dõi */}
+                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{personalStats.totalEver}</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">đơn đã theo dõi</div>
+                </div>
+                {/* Trung bình ngày giao */}
+                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {personalStats.avgDeliveryDays !== null ? personalStats.avgDeliveryDays : "—"}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">ngày TB giao</div>
+                </div>
+                {/* Nhanh nhất */}
+                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-green-400">
+                    {personalStats.fastestDays !== null ? personalStats.fastestDays : "—"}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">ngày nhanh nhất</div>
+                </div>
+              </div>
+
+              {/* Dòng tóm tắt */}
+              <div className="px-5 pb-5">
+                <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl px-4 py-3">
+                  {personalStats.totalDelivered > 0 ? (
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Bạn đã nhận thành công{" "}
+                      <span className="text-white font-semibold">{personalStats.totalDelivered} đơn</span>
+                      {personalStats.avgDeliveryDays !== null && (
+                        <>
+                          {", trung bình "}
+                          <span className="text-blue-400 font-semibold">{personalStats.avgDeliveryDays} ngày</span>
+                          {" mỗi đơn"}
+                        </>
+                      )}
+                      {personalStats.fastestDays !== null && personalStats.fastestDays === 0 && (
+                        <span className="text-green-400"> · Có đơn giao cùng ngày! 🚀</span>
+                      )}
+                      .
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Chưa có đơn nào được giao thành công. Dữ liệu sẽ hiện khi có đơn hoàn thành.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-5 text-center text-xs text-slate-500">
+              Không thể tải thống kê
+            </div>
+          )}
         </div>
 
         {/* Change password */}

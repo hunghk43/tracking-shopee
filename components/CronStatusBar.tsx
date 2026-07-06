@@ -220,12 +220,15 @@ export default function CronStatusBar({ userId }: Props) {
               ? "bg-orange-500/10 border-orange-500/20 text-orange-400"
               : "bg-slate-800 border-slate-700 text-slate-400"
         }`}
-        title="Xem trạng thái tự động quét"
+        title={countdown ? `Quét tiếp theo: ${countdown}` : "Xem trạng thái tự động quét"}
       >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
           isHealthy ? "bg-green-400 pulse-dot" : "bg-orange-400"
         }`} />
         <span className="hidden sm:inline">{status.active_count} đơn</span>
+        {countdown && (
+          <span className="hidden md:inline text-slate-500 tabular-nums">· {countdown}</span>
+        )}
       </button>
 
       {open && (

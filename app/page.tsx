@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Tracking, TrackingStats, TrackResult, FilterMode, Carrier } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
-import { isStatusDone, isStatusCancelledOrReturned } from "@/lib/tracker";
+import { isStatusCancelledOrReturned } from "@/lib/tracker";
 
 import StatsBar from "@/components/StatsBar";
 import TrackingCard from "@/components/TrackingCard";
@@ -16,8 +16,50 @@ import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import ToastContainer from "@/components/Toast";
 import PushNotificationBtn from "@/components/PushNotificationBtn";
 import CronStatusBar from "@/components/CronStatusBar";
+import { useFaviconBadge } from "@/hooks/useFaviconBadge";
 
 const MAX_TRACKINGS = 100;
+
+function usePullToRefresh(onRefresh: () => void) {
+  const startY = useRef(0);
+  const pulling = useRef(false);
+  const pullDistanceRef = useRef(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const THRESHOLD = 70;
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
+
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      if (window.scrollY === 0) {
+        startY.current = e.touches[0].clientY;
+        pulling.current = true;
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!pulling.current) return;
+      const dist = Math.max(0, Math.min(e.touches[0].clientY - startY.current, 110));
+      pullDistanceRef.current = dist;
+      setPullDistance(dist);
+    };
+    const onTouchEnd = () => {
+      if (pulling.current && pullDistanceRef.current >= THRESHOLD) onRefreshRef.current();
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+      pulling.current = false;
+    };
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []); // mount/unmount một lần duy nhất
+
+  return { pullDistance, threshold: THRESHOLD };
+}
 
 function useLastUpdated() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -43,8 +85,9 @@ function useLastUpdated() {
 export default function HomePage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
-  const { toasts, addToast, removeToast } = useToast();
+  const { toasts, addToast, addToastWithAction, removeToast } = useToast();
   const { display: lastUpdatedDisplay, update: markUpdated } = useLastUpdated();
+  const { pullDistance, threshold: pullThreshold } = usePullToRefresh(() => loadData());
 
   const [trackings, setTrackings] = useState<Tracking[]>([]);
   const [stats, setStats] = useState<TrackingStats>({ total: 0, in_transit: 0, delivered: 0, cancelled: 0, returned: 0 });
@@ -57,15 +100,18 @@ export default function HomePage() {
   const [selectedTracking, setSelectedTracking] = useState<Tracking | null>(null);
   const [detailResult, setDetailResult] = useState<TrackResult | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Tracking | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [bulkDeleteType, setBulkDeleteType] = useState<"delivered" | "cancelled" | null>(null);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [updatedIds, setUpdatedIds] = useState<Set<string>>(new Set());
+  const [sortMode, setSortMode] = useState<"default" | "updated" | "created" | "nickname">("default");
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const userId = user?.id ?? "";
+
+  // Favicon badge: hiện số đơn đang vận chuyển trên tab
+  useFaviconBadge(stats.in_transit);
 
   // Register SW
   useEffect(() => {
@@ -80,12 +126,26 @@ export default function HomePage() {
       if (res.status === 401) { router.push("/login"); return; }
       if (!res.ok) throw new Error("Lỗi tải dữ liệu");
       const data = await res.json();
-      setTrackings(data.trackings || []);
+      const newTrackings: Tracking[] = data.trackings || [];
+
+      // Detect đơn vừa đổi trạng thái để highlight
+      setTrackings(prev => {
+        const prevMap = new Map(prev.map(t => [t.id, t.last_status]));
+        const changed = newTrackings
+          .filter(t => prevMap.has(t.id) && prevMap.get(t.id) !== t.last_status)
+          .map(t => t.id);
+        if (changed.length > 0) {
+          setUpdatedIds(new Set(changed));
+          setTimeout(() => setUpdatedIds(new Set()), 3000);
+        }
+        return newTrackings;
+      });
+
       setStats(data.stats || {});
       markUpdated();
       setSelectedTracking(prev => {
         if (!prev) return null;
-        return (data.trackings as Tracking[]).find((t: Tracking) => t.id === prev.id) || null;
+        return newTrackings.find((t: Tracking) => t.id === prev.id) || null;
       });
     } catch (e) {
       if (!silent) addToast("error", "Lỗi tải dữ liệu", String(e));
@@ -156,10 +216,45 @@ export default function HomePage() {
       const q = searchQuery.toLowerCase();
       if (!t.tracking_code.toLowerCase().includes(q) && !(t.nickname || "").toLowerCase().includes(q) && !(t.last_status || "").toLowerCase().includes(q)) return false;
     }
-    if (filter === "intransit") return !isStatusDone(t.last_status, t.is_delivered);
-    if (filter === "delivered") return t.is_delivered || (t.last_status || "").toLowerCase().includes("giao hàng thành công");
+    const s = (t.last_status || "").toLowerCase();
+    if (filter === "intransit") {
+      // Đang VC = có last_status, chưa giao/hủy/hoàn
+      // Đơn chưa tra cứu (last_status trống) không hiện ở đây
+      return (
+        !!s &&
+        !t.is_delivered &&
+        !s.includes("giao hàng thành công") &&
+        !s.includes("delivered") &&
+        !s.includes("huỷ") &&
+        !s.includes("hủy") &&
+        !s.includes("cancel") &&
+        !s.includes("hoàn") &&
+        !s.includes("trả về") &&
+        !s.includes("return")
+      );
+    }
+    if (filter === "delivered") {
+      return (
+        t.is_delivered ||
+        s.includes("giao hàng thành công") ||
+        s.includes("delivered")
+      );
+    }
     if (filter === "cancelled") return isStatusCancelledOrReturned(t.last_status);
     return true;
+  });
+
+  const sortedTrackings = [...filteredTrackings].sort((a, b) => {
+    if (sortMode === "updated") {
+      return new Date(b.last_checked_at || 0).getTime() - new Date(a.last_checked_at || 0).getTime();
+    }
+    if (sortMode === "created") {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (sortMode === "nickname") {
+      return (a.nickname || a.tracking_code).localeCompare(b.nickname || b.tracking_code, "vi");
+    }
+    return 0; // default: giữ thứ tự DB (is_delivered asc, created_at desc)
   });
 
   async function handleAdd(carrier: Carrier, code: string, nickname: string) {
@@ -187,18 +282,43 @@ export default function HomePage() {
   }
 
   async function handleDelete(t: Tracking) {
-    setDeleteLoading(true);
+    // Capture snapshot trước khi fetch để undo chính xác
+    const snapshotTrackings = trackings;
+    const snapshotStats = stats;
+
     try {
       const res = await fetch(`/api/trackings/${t.display_id}?user_id=${userId}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) { addToast("error", "Xóa thất bại", data.error); return; }
-      addToast("success", `🗑 Đã xóa đơn #${t.display_id}`);
+
       setTrackings(data.trackings || []);
       setStats(data.stats || {});
       markUpdated();
       if (selectedTracking?.id === t.id) { setSelectedTracking(null); setDetailResult(null); }
+
+      addToastWithAction("info", `🗑 Đã xóa đơn #${t.display_id}`, t.nickname || t.tracking_code, {
+        label: "↩ Hoàn tác",
+        onClick: async () => {
+          try {
+            const reRes = await fetch("/api/trackings", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId, carrier: t.carrier, tracking_code: t.tracking_code, nickname: t.nickname }),
+            });
+            if (reRes.ok) {
+              const reData = await reRes.json();
+              // Dùng data mới từ server, fallback về snapshot
+              setTrackings(reData.trackings || snapshotTrackings);
+              setStats(reData.stats || snapshotStats);
+              markUpdated();
+              addToast("success", `↩ Đã khôi phục đơn #${t.display_id}`);
+            } else {
+              addToast("error", "Không thể hoàn tác");
+            }
+          } catch { addToast("error", "Không thể hoàn tác"); }
+        },
+      });
     } catch (e) { addToast("error", "Lỗi kết nối", String(e)); }
-    finally { setDeleteLoading(false); setDeleteTarget(null); }
   }
 
   async function handleRefresh(t: Tracking) {
@@ -274,14 +394,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-900">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-      <DeleteConfirmModal
-        open={!!deleteTarget}
-        title={`Xóa đơn #${deleteTarget?.display_id}?`}
-        message={`Mã: ${deleteTarget?.tracking_code}`}
-        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
-        onCancel={() => setDeleteTarget(null)}
-        loading={deleteLoading}
-      />
       <DeleteConfirmModal
         open={!!bulkDeleteType}
         title={bulkDeleteType === "delivered" ? `Xóa ${stats.delivered} đơn đã giao?` : `Xóa ${stats.cancelled + stats.returned} đơn hủy/hoàn?`}
@@ -367,6 +479,23 @@ export default function HomePage() {
 
       {/* ===== MAIN ===== */}
       <main className="max-w-7xl mx-auto px-4 py-4">
+        {/* Pull-to-refresh indicator (mobile only) */}
+        {pullDistance > 0 && (
+          <div
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-30 pointer-events-none transition-all duration-100"
+            style={{ opacity: Math.min(1, pullDistance / pullThreshold) }}
+          >
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-full shadow-lg text-xs text-slate-300">
+              <span
+                className="inline-block transition-transform duration-100"
+                style={{ transform: `rotate(${Math.min(180, (pullDistance / pullThreshold) * 180)}deg)` }}
+              >
+                🔄
+              </span>
+              {pullDistance >= pullThreshold ? "Thả để làm mới" : "Kéo để làm mới"}
+            </div>
+          </div>
+        )}
         {/* Stats */}
         <div className="mb-4">
           <StatsBar stats={stats} filter={filter} onFilter={(f) => { setFilter(f); setSelectedTracking(null); setDetailResult(null); }} />
@@ -385,7 +514,7 @@ export default function HomePage() {
         <div className="flex gap-4 items-start">
           {/* List */}
           <div className={`${showPanel ? "hidden lg:block lg:w-[380px] xl:w-[420px] shrink-0" : "w-full"}`}>
-            {/* Search + bulk delete */}
+            {/* Search + sort + bulk delete */}
             <div className="flex gap-2 mb-3">
               <div className="relative flex-1">
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -394,6 +523,18 @@ export default function HomePage() {
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">🔍</span>
                 {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-base leading-none">×</button>}
               </div>
+              {/* Sort dropdown */}
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
+                className="bg-slate-800 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-400 focus:outline-none focus:border-blue-500/60 cursor-pointer shrink-0"
+                title="Sắp xếp"
+              >
+                <option value="default">📦 Mặc định</option>
+                <option value="updated">🔄 Mới cập nhật</option>
+                <option value="created">🕐 Mới thêm</option>
+                <option value="nickname">🔤 Tên A-Z</option>
+              </select>
               {filter === "delivered" && stats.delivered > 0 && (
                 <button onClick={() => setBulkDeleteType("delivered")} className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-medium transition-all whitespace-nowrap">🗑 Xóa tất cả</button>
               )}
@@ -402,14 +543,32 @@ export default function HomePage() {
               )}
             </div>
 
-            {filteredTrackings.length > 0 && (
-              <p className="text-xs text-slate-600 mb-2 px-1">{filteredTrackings.length} đơn{searchQuery ? ` · "${searchQuery}"` : ""}</p>
+            {sortedTrackings.length > 0 && (
+              <p className="text-xs text-slate-600 mb-2 px-1">{sortedTrackings.length} đơn{searchQuery ? ` · "${searchQuery}"` : ""}{sortMode !== "default" ? ` · ${sortMode === "updated" ? "mới cập nhật" : sortMode === "created" ? "mới thêm" : "A-Z"}` : ""}</p>
             )}
 
             {/* List items */}
             {dataLoading ? (
-              <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="skeleton h-[80px] rounded-xl" />)}</div>
-            ) : filteredTrackings.length === 0 ? (
+              <div className="space-y-1.5">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="p-3.5 rounded-xl border border-slate-700/80 bg-slate-800/80">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="skeleton h-3 w-6 rounded" />
+                          <div className="skeleton h-3 w-10 rounded" />
+                          <div className="skeleton h-5 w-16 rounded-full" />
+                        </div>
+                        <div className="skeleton h-4 w-40 rounded" />
+                        <div className="skeleton h-3 w-52 rounded" />
+                        <div className="skeleton h-3 w-32 rounded" />
+                      </div>
+                      <div className="skeleton w-7 h-7 rounded-lg shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedTrackings.length === 0 ? (
               <div className="text-center py-14 fade-in">
                 <div className="text-4xl mb-3">{searchQuery ? "🔍" : stats.total === 0 ? "📦" : "🎯"}</div>
                 <p className="text-slate-400 text-sm">{searchQuery ? `Không tìm thấy "${searchQuery}"` : stats.total === 0 ? "Chưa có đơn nào" : "Không có đơn trong bộ lọc này"}</p>
@@ -422,16 +581,12 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {filteredTrackings.map((t) => (
+                {sortedTrackings.map((t) => (
                   <div key={t.id}
-                    className={`group relative rounded-xl border transition-all duration-150 cursor-pointer ${selectedTracking?.id === t.id ? "border-blue-500/50 bg-blue-950/20" : "border-slate-700/80 bg-slate-800/80 hover:border-slate-600 hover:bg-slate-800"}`}
+                    className={`group relative rounded-xl border transition-all duration-150 cursor-pointer ${updatedIds.has(t.id) ? "tracking-updated" : ""} ${selectedTracking?.id === t.id ? "border-blue-500/50 bg-blue-950/20" : "border-slate-700/80 bg-slate-800/80 hover:border-slate-600 hover:bg-slate-800"}`}
                     onClick={() => { setSelectedTracking(t); setDetailResult(null); detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
                     {selectedTracking?.id === t.id && <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-blue-500" />}
-                    <TrackingCard tracking={t} onClick={() => {}} onDelete={(e) => { e.stopPropagation(); setDeleteTarget(t); }} />
-                    <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(t.tracking_code).then(() => addToast("info", "Đã copy mã")); }}
-                      className="absolute top-3 right-10 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-md bg-slate-700 hover:bg-slate-600 text-slate-400 text-xs transition-all" title="Copy mã">
-                      📋
-                    </button>
+                    <TrackingCard tracking={t} onClick={() => {}} onDelete={(e) => { e.stopPropagation(); handleDelete(t); }} onCopy={() => addToast("info", "📋 Đã copy mã")} />
                   </div>
                 ))}
               </div>
@@ -446,7 +601,7 @@ export default function HomePage() {
                 result={detailResult}
                 loading={detailLoading}
                 onRefresh={() => handleRefresh(selectedTracking!)}
-                onDelete={() => setDeleteTarget(selectedTracking)}
+                onDelete={() => selectedTracking && handleDelete(selectedTracking)}
                 onEditNote={(note) => handleEditNote(selectedTracking!, note)}
                 onClose={() => { setSelectedTracking(null); setDetailResult(null); }}
               />

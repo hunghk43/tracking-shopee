@@ -15,6 +15,7 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
   const [code, setCode] = useState("");
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
+  const [clipboardSuggestion, setClipboardSuggestion] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -22,7 +23,20 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
       setCode("");
       setNickname("");
       setError("");
+      setClipboardSuggestion(null);
       setTimeout(() => inputRef.current?.focus(), 100);
+
+      // Detect mã vận đơn trong clipboard
+      if (navigator.clipboard?.readText) {
+        navigator.clipboard.readText().then(text => {
+          const trimmed = text.trim().toUpperCase();
+          if (trimmed.length >= 5 && trimmed.length <= 40 && /^[A-Z0-9]+$/.test(trimmed)) {
+            setClipboardSuggestion(trimmed);
+            // Auto-detect carrier
+            if (trimmed.startsWith("SPX")) setCarrier("spx");
+          }
+        }).catch(() => {}); // Permission denied hoặc empty, bỏ qua
+      }
     }
   }, [open]);
 
@@ -109,6 +123,25 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
               autoComplete="off"
               spellCheck={false}
             />
+            {/* Clipboard suggestion */}
+            {clipboardSuggestion && !code && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCode(clipboardSuggestion);
+                  setClipboardSuggestion(null);
+                  inputRef.current?.focus();
+                }}
+                className="mt-2 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/25 hover:bg-blue-500/20 transition-colors text-left"
+              >
+                <span className="text-base shrink-0">📋</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-blue-400 font-medium leading-none mb-0.5">Dán từ clipboard?</div>
+                  <div className="text-xs text-blue-300 font-mono truncate">{clipboardSuggestion}</div>
+                </div>
+                <span className="text-xs text-blue-500 shrink-0 font-medium">Dán →</span>
+              </button>
+            )}
             {error && <p className="text-red-400 text-xs mt-1.5">⚠️ {error}</p>}
           </div>
 

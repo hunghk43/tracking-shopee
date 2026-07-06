@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import type { Tracking } from "@/types";
 import { carrierDisplay } from "@/lib/tracker";
 import StatusBadge from "./StatusBadge";
@@ -9,6 +9,32 @@ interface Props {
   tracking: Tracking;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
+  onCopy?: () => void;
+}
+
+function useLongPress(onLongPress: () => void, delay = 500) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
+  const start = useCallback(() => {
+    didLongPress.current = false;
+    timerRef.current = setTimeout(() => {
+      didLongPress.current = true;
+      onLongPress();
+    }, delay);
+  }, [onLongPress, delay]);
+
+  const cancel = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  return {
+    onTouchStart: start,
+    onTouchEnd: cancel,
+    onTouchMove: cancel,
+    // ngăn context menu native trên mobile
+    onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); },
+  };
 }
 
 function relativeTime(isoStr: string | null): string {
@@ -22,13 +48,45 @@ function relativeTime(isoStr: string | null): string {
   } catch { return ""; }
 }
 
-export default function TrackingCard({ tracking, onDelete }: Props) {
+function daysSince(isoStr: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(isoStr).getTime()) / 86400000));
+}
+
+function isDoneStatus(t: Tracking): boolean {
+  const s = (t.last_status || "").toLowerCase();
+  return (
+    t.is_delivered ||
+    s.includes("giao hàng thành công") ||
+    s.includes("delivered") ||
+    s.includes("huỷ") || s.includes("hủy") || s.includes("cancel") ||
+    s.includes("hoàn") || s.includes("trả về") || s.includes("return")
+  );
+}
+
+export default function TrackingCard({ tracking, onDelete, onCopy }: Props) {
   const t = tracking;
   const displayId = t.display_id || 0;
   const checkedAgo = useMemo(() => relativeTime(t.last_checked_at), [t.last_checked_at]);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(t.tracking_code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      onCopy?.();
+    }).catch(() => {});
+  }, [t.tracking_code, onCopy]);
+
+  const longPress = useLongPress(handleCopy);
 
   return (
-    <div className="p-3.5">
+    <div className="p-3.5 relative" {...longPress}>
+      {/* Copied tooltip */}
+      {copied && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-blue-600 text-white text-xs px-3 py-1 rounded-full shadow-lg fade-in pointer-events-none select-none">
+          ✓ Đã copy
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           {/* Row 1: ID + carrier + status */}
@@ -69,12 +127,33 @@ export default function TrackingCard({ tracking, onDelete }: Props) {
               </span>
             )}
           </div>
+
+          {/* Row 6: số ngày xử lý */}
+          {(() => {
+            const days = daysSince(t.created_at);
+            if (days === 0) return null;
+            const done = isDoneStatus(t);
+            // Đơn đang chạy > 5 ngày → highlight cam cảnh báo
+            const isLate = !done && days > 5;
+            return (
+              <div className="flex items-center gap-1 mt-1">
+                <span className={`text-xs tabular-nums ${
+                  done ? "text-slate-600" : isLate ? "text-orange-500" : "text-slate-600"
+                }`}>
+                  {done ? `✓ ${days} ngày` : isLate ? `⏳ ${days} ngày` : `⏳ Ngày ${days}`}
+                </span>
+                {isLate && (
+                  <span className="text-xs text-orange-500/70">· chậm</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Delete */}
+        {/* Delete — hover trên desktop, luôn hiện trên mobile */}
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/30 text-red-400 transition-all text-xs shrink-0"
+          className="opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 [@media(hover:none)]:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/30 text-red-400 transition-all text-xs shrink-0"
           title="Xóa"
         >
           🗑

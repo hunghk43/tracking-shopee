@@ -338,9 +338,12 @@ export function dbGetStats(trackings: Tracking[]): TrackingStats {
       stats.cancelled++;
     } else if (s.includes("hoàn") || s.includes("trả về") || s.includes("return")) {
       stats.returned++;
-    } else {
+    } else if (s) {
+      // Chỉ đếm vào in_transit khi có last_status thực sự
+      // Đơn chưa tra cứu (last_status = null/"") không tính vào "Đang VC"
       stats.in_transit++;
     }
+    // last_status trống → chỉ tính vào total, không vào in_transit
   }
 
   return stats;

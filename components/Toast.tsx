@@ -7,6 +7,8 @@ export interface ToastItem {
   type: "success" | "error" | "info" | "warning";
   title: string;
   message?: string;
+  action?: { label: string; onClick: () => void };
+  duration?: number;
 }
 
 interface Props {
@@ -37,9 +39,10 @@ function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
   }, [toast.id, onRemove]);
 
   useEffect(() => {
-    const timer = setTimeout(handleRemove, 4000);
+    const ms = toast.duration ?? (toast.action ? 5000 : 4000);
+    const timer = setTimeout(handleRemove, ms);
     return () => clearTimeout(timer);
-  }, [handleRemove]);
+  }, [handleRemove, toast.action, toast.duration]);
 
   return (
     <div
@@ -52,6 +55,14 @@ function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
         <p className="text-sm font-semibold text-slate-100">{toast.title}</p>
         {toast.message && (
           <p className="text-xs text-slate-300 mt-0.5 break-words">{toast.message}</p>
+        )}
+        {toast.action && (
+          <button
+            onClick={(e) => { e.stopPropagation(); toast.action!.onClick(); handleRemove(); }}
+            className="mt-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+          >
+            {toast.action.label}
+          </button>
         )}
       </div>
       <button className="text-slate-400 hover:text-slate-200 text-lg leading-none shrink-0">×</button>

@@ -13,7 +13,7 @@ import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 
 const MAX_TRACKINGS = 100;
 
-// GET /api/trackings?user_id=xxx
+// GET /api/trackings?user_id=xxx[&include_archived=true]
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("user_id");
   if (!userId || userId.length > 64)
@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
   if (!rl.allowed)
     return NextResponse.json({ error: "Quá nhiều request, thử lại sau" }, { status: 429 });
 
+  const includeArchived = req.nextUrl.searchParams.get("include_archived") === "true";
+
   const sb = createServerSupabase();
-  const trackings = await dbListUser(sb, userId);
+  const trackings = await dbListUser(sb, userId, includeArchived);
   const stats = dbGetStats(trackings);
 
   return NextResponse.json({ trackings, stats });
