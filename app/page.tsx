@@ -20,6 +20,7 @@ import BulkToolbar, { exportTrackingsCSV } from "@/components/BulkToolbar";
 import BottomNav from "@/components/BottomNav";
 import EmptyState from "@/components/EmptyState";
 import { useFaviconBadge } from "@/hooks/useFaviconBadge";
+import { usePresence } from "@/hooks/usePresence";
 
 const MAX_TRACKINGS = 100;
 
@@ -136,6 +137,7 @@ export default function HomePage() {
 
   const userId = user?.id ?? "";
   useFaviconBadge(stats.in_transit);
+  usePresence(user?.id, user?.email);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(console.error);
@@ -519,6 +521,16 @@ export default function HomePage() {
                   >
                     ⚙️ Cài đặt tài khoản
                   </button>
+                  {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
+                    <button
+                      onClick={() => { setShowUserMenu(false); router.push("/admin"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors hover:opacity-80"
+                      style={{ color: "var(--color-shopee)", borderTop: "1px solid var(--color-border)" }}
+                      role="menuitem"
+                    >
+                      🔐 Admin Dashboard
+                    </button>
+                  )}
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors hover:opacity-80"

@@ -10,7 +10,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon") ||
     pathname === "/sw.js" ||
-    pathname === "/manifest.json"
+    pathname === "/manifest.json" ||
+    pathname.startsWith("/admin")
   ) {
     return NextResponse.next();
   }
