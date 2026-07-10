@@ -14,7 +14,9 @@ interface Props {
   onOpenAdd: () => void;
   onOpenNotifications?: () => void;
   onOpenSettings: () => void;
-  activeTab?: "trackings" | "quicktrack" | "add" | "notifications" | "settings";
+  onOpenAdmin?: () => void;
+  isAdmin?: boolean;
+  activeTab?: "trackings" | "quicktrack" | "add" | "notifications" | "settings" | "admin";
   notificationBadge?: number;
 }
 
@@ -24,6 +26,8 @@ export default function BottomNav({
   onOpenAdd,
   onOpenNotifications,
   onOpenSettings,
+  onOpenAdmin,
+  isAdmin = false,
   activeTab = "trackings",
   notificationBadge = 0,
 }: Props) {
@@ -38,6 +42,7 @@ export default function BottomNav({
       badge: notificationBadge,
     },
     { icon: "⚙️", label: "Cài đặt",    action: onOpenSettings,      active: activeTab === "settings" },
+    ...(isAdmin ? [{ icon: "🔐", label: "Admin", action: onOpenAdmin ?? (() => {}), active: activeTab === "admin" }] : []),
   ];
 
   return (
@@ -56,8 +61,12 @@ export default function BottomNav({
             onClick={item.action}
             className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-150 min-w-[52px]"
             style={{
-              color: item.active ? "var(--color-accent-blue)" : "var(--color-muted)",
-              background: item.active ? "rgba(59,130,246,0.08)" : "transparent",
+              color: item.label === "Admin"
+                ? (item.active ? "var(--color-shopee)" : "rgba(251,146,60,0.7)")
+                : (item.active ? "var(--color-accent-blue)" : "var(--color-muted)"),
+              background: item.label === "Admin"
+                ? (item.active ? "rgba(251,146,60,0.12)" : "transparent")
+                : (item.active ? "rgba(59,130,246,0.08)" : "transparent"),
             }}
             aria-label={item.label}
             aria-current={item.active ? "page" : undefined}

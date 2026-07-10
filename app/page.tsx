@@ -479,6 +479,18 @@ export default function HomePage() {
               🔄
             </button>
 
+            {user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "hoangkimhung2004@gmail.com").toLowerCase() && (
+              <button
+                onClick={() => router.push("/admin")}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:opacity-90"
+                style={{ background: "rgba(251,146,60,0.15)", border: "1px solid rgba(251,146,60,0.45)", color: "var(--color-shopee)" }}
+                aria-label="Admin Dashboard"
+                title="Admin Dashboard"
+              >
+                🔐 Admin
+              </button>
+            )}
+
             <button
               onClick={() => setAddModal(true)}
               disabled={stats.total >= MAX_TRACKINGS}
@@ -804,6 +816,8 @@ export default function HomePage() {
         onOpenQuickTrack={() => setQuickTrackModal(true)}
         onOpenAdd={() => setAddModal(true)}
         onOpenSettings={() => router.push("/settings")}
+        onOpenAdmin={() => router.push("/admin")}
+        isAdmin={user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "hoangkimhung2004@gmail.com").toLowerCase()}
         activeTab={showPanel ? "trackings" : "trackings"}
       />
     </div>
