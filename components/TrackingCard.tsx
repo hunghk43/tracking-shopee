@@ -112,7 +112,7 @@ export default function TrackingCard({
 
   return (
     <div
-      className="relative p-3.5"
+      className="relative p-3.5 group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       {...longPress}

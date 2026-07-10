@@ -482,7 +482,7 @@ export default function HomePage() {
             {user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "hoangkimhung2004@gmail.com").toLowerCase() && (
               <button
                 onClick={() => router.push("/admin")}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:opacity-90"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:opacity-90"
                 style={{ background: "rgba(251,146,60,0.15)", border: "1px solid rgba(251,146,60,0.45)", color: "var(--color-shopee)" }}
                 aria-label="Admin Dashboard"
                 title="Admin Dashboard"
