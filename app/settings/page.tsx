@@ -25,12 +25,8 @@ export default function SettingsPage() {
   const [personalStats, setPersonalStats] = useState<PersonalStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  // Fetch thống kê cá nhân từ toàn bộ lịch sử (kể cả archived)
   useEffect(() => {
-    if (!user?.id) {
-      // Auth chưa load xong, không set false vội
-      return;
-    }
+    if (!user?.id) return;
     setStatsLoading(true);
     fetch(`/api/trackings?user_id=${user.id}&include_archived=true`)
       .then(r => r.json())
@@ -76,14 +72,12 @@ export default function SettingsPage() {
     const sb = getSupabaseBrowser();
 
     try {
-      // Verify mật khẩu hiện tại bằng cách re-authenticate
       const { error: signInError } = await sb.auth.signInWithPassword({
         email: user?.email || "",
         password: currentPassword,
       });
       if (signInError) throw new Error("Mật khẩu hiện tại không đúng");
 
-      // Đổi mật khẩu
       const { error: updateError } = await sb.auth.updateUser({ password: newPassword });
       if (updateError) throw updateError;
 
@@ -104,31 +98,53 @@ export default function SettingsPage() {
     router.push("/login");
   }
 
+  const inputStyle = {
+    background: "var(--color-bg)",
+    border: "1px solid var(--color-border)",
+    color: "var(--color-primary)",
+  };
+
+  const cardStyle = {
+    background: "var(--color-surface)",
+    border: "1px solid var(--color-border)",
+    boxShadow: "var(--shadow-card)",
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen" style={{ background: "var(--color-bg)" }}>
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+      <header
+        className="sticky top-0 z-30 glass"
+        style={{ borderBottom: "1px solid var(--color-border)" }}
+      >
+        {/* Shopee accent bar */}
+        <div style={{ background: "linear-gradient(90deg, var(--color-shopee), #FF6633)", height: "3px" }} />
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={() => router.push("/")}
-            className="text-slate-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700"
+            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:opacity-70"
+            style={{ color: "var(--color-muted)", background: "var(--color-border)" }}
+            aria-label="Quay lại"
           >
             ←
           </button>
-          <h1 className="text-base font-bold text-white">Cài đặt tài khoản</h1>
+          <h1 className="text-base font-bold" style={{ color: "var(--color-primary)" }}>Cài đặt tài khoản</h1>
         </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
         {/* Account info */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold text-white">
+        <div className="rounded-2xl p-5" style={cardStyle}>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white"
+              style={{ background: "var(--color-accent-blue)" }}
+            >
               {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">{user?.email}</div>
-              <div className="text-xs text-slate-400 mt-0.5">
+              <div className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>{user?.email}</div>
+              <div className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>
                 Tham gia {user?.created_at
                   ? new Date(user.created_at).toLocaleDateString("vi-VN")
                   : ""}
@@ -138,14 +154,14 @@ export default function SettingsPage() {
         </div>
 
         {/* Personal stats */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h2 className="text-sm font-semibold text-white">📊 Thống kê của bạn</h2>
+        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>📊 Thống kê của bạn</h2>
           </div>
           {statsLoading ? (
             <div className="p-5 grid grid-cols-3 gap-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-slate-900/60 rounded-xl p-3 text-center space-y-2">
+                <div key={i} className="rounded-xl p-3 text-center space-y-2" style={{ background: "var(--color-bg)" }}>
                   <div className="skeleton h-8 w-12 mx-auto rounded" />
                   <div className="skeleton h-3 w-16 mx-auto rounded" />
                 </div>
@@ -154,48 +170,47 @@ export default function SettingsPage() {
           ) : personalStats ? (
             <>
               <div className="p-5 grid grid-cols-3 gap-3">
-                {/* Tổng đơn đã theo dõi */}
-                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{personalStats.totalEver}</div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">đơn đã theo dõi</div>
+                <div className="rounded-xl p-3 text-center" style={{ background: "var(--color-bg)" }}>
+                  <div className="text-2xl font-bold" style={{ color: "var(--color-primary)" }}>{personalStats.totalEver}</div>
+                  <div className="text-xs mt-0.5 leading-tight" style={{ color: "var(--color-muted)" }}>đơn đã theo dõi</div>
                 </div>
-                {/* Trung bình ngày giao */}
-                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
-                  <div className="text-2xl font-bold text-blue-400">
+                <div className="rounded-xl p-3 text-center" style={{ background: "var(--color-bg)" }}>
+                  <div className="text-2xl font-bold" style={{ color: "var(--color-accent-blue)" }}>
                     {personalStats.avgDeliveryDays !== null ? personalStats.avgDeliveryDays : "—"}
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">ngày TB giao</div>
+                  <div className="text-xs mt-0.5 leading-tight" style={{ color: "var(--color-muted)" }}>ngày TB giao</div>
                 </div>
-                {/* Nhanh nhất */}
-                <div className="bg-slate-900/60 rounded-xl p-3 text-center">
-                  <div className="text-2xl font-bold text-green-400">
+                <div className="rounded-xl p-3 text-center" style={{ background: "var(--color-bg)" }}>
+                  <div className="text-2xl font-bold" style={{ color: "var(--color-accent-green)" }}>
                     {personalStats.fastestDays !== null ? personalStats.fastestDays : "—"}
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-tight">ngày nhanh nhất</div>
+                  <div className="text-xs mt-0.5 leading-tight" style={{ color: "var(--color-muted)" }}>ngày nhanh nhất</div>
                 </div>
               </div>
 
-              {/* Dòng tóm tắt */}
               <div className="px-5 pb-5">
-                <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl px-4 py-3">
+                <div
+                  className="rounded-xl px-4 py-3"
+                  style={{ background: "rgba(37,99,235,0.04)", border: "1px solid rgba(37,99,235,0.12)" }}
+                >
                   {personalStats.totalDelivered > 0 ? (
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--color-secondary)" }}>
                       Bạn đã nhận thành công{" "}
-                      <span className="text-white font-semibold">{personalStats.totalDelivered} đơn</span>
+                      <span className="font-semibold" style={{ color: "var(--color-primary)" }}>{personalStats.totalDelivered} đơn</span>
                       {personalStats.avgDeliveryDays !== null && (
                         <>
                           {", trung bình "}
-                          <span className="text-blue-400 font-semibold">{personalStats.avgDeliveryDays} ngày</span>
+                          <span className="font-semibold" style={{ color: "var(--color-accent-blue)" }}>{personalStats.avgDeliveryDays} ngày</span>
                           {" mỗi đơn"}
                         </>
                       )}
                       {personalStats.fastestDays !== null && personalStats.fastestDays === 0 && (
-                        <span className="text-green-400"> · Có đơn giao cùng ngày! 🚀</span>
+                        <span style={{ color: "var(--color-accent-green)" }}> · Có đơn giao cùng ngày! 🚀</span>
                       )}
                       .
                     </p>
                   ) : (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                       Chưa có đơn nào được giao thành công. Dữ liệu sẽ hiện khi có đơn hoàn thành.
                     </p>
                   )}
@@ -203,57 +218,66 @@ export default function SettingsPage() {
               </div>
             </>
           ) : (
-            <div className="p-5 text-center text-xs text-slate-500">
+            <div className="p-5 text-center text-xs" style={{ color: "var(--color-muted)" }}>
               Không thể tải thống kê
             </div>
           )}
         </div>
 
         {/* Change password */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h2 className="text-sm font-semibold text-white">🔑 Đổi mật khẩu</h2>
+        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>🔑 Đổi mật khẩu</h2>
           </div>
           <form onSubmit={handleChangePassword} className="p-5 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Mật khẩu hiện tại</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--color-muted)" }}>Mật khẩu hiện tại</label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
-                className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                style={inputStyle}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Mật khẩu mới</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--color-muted)" }}>Mật khẩu mới</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                style={inputStyle}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Xác nhận mật khẩu mới</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--color-muted)" }}>Xác nhận mật khẩu mới</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                style={inputStyle}
               />
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+              <div
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)", color: "var(--color-accent-red)" }}
+              >
                 ⚠️ {error}
               </div>
             )}
             {success && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-green-400 text-sm">
+              <div
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{ background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.25)", color: "var(--color-accent-green)" }}
+              >
                 {success}
               </div>
             )}
@@ -261,7 +285,8 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90"
+              style={{ background: "var(--color-accent-blue)", color: "#fff" }}
             >
               {loading ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -271,14 +296,19 @@ export default function SettingsPage() {
         </div>
 
         {/* Danger zone */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h2 className="text-sm font-semibold text-white">⚠️ Vùng nguy hiểm</h2>
+        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>⚠️ Vùng nguy hiểm</h2>
           </div>
           <div className="p-5">
             <button
               onClick={handleSignOut}
-              className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-semibold text-sm transition-all"
+              className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80"
+              style={{
+                background: "rgba(220,38,38,0.06)",
+                border: "1px solid rgba(220,38,38,0.2)",
+                color: "var(--color-accent-red)",
+              }}
             >
               🚪 Đăng xuất khỏi tài khoản
             </button>

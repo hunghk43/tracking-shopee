@@ -68,16 +68,18 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl fade-in overflow-hidden">
+      <div className="relative w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden slide-in-up sm:fade-in-scale"
+        style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-modal)" }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-700">
+        <div className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
           <div>
-            <h2 className="text-lg font-bold text-white">➕ Thêm mã vận đơn</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Hỗ trợ GHN và SPX (Shopee Express)</p>
+            <h2 className="text-lg font-bold" style={{ color: "var(--color-primary)" }}>➕ Thêm mã vận đơn</h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>Hỗ trợ GHN và SPX (Shopee Express)</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 transition-colors"
+            className="text-2xl w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--color-muted)" }}
           >
             ×
           </button>
@@ -86,7 +88,7 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Carrier selector */}
           <div>
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-medium uppercase tracking-wider mb-2 block" style={{ color: "var(--color-muted)" }}>
               Chọn hãng vận chuyển
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -95,11 +97,12 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
                   key={c}
                   type="button"
                   onClick={() => setCarrier(c)}
-                  className={`py-3 px-4 rounded-xl border-2 transition-all text-sm font-semibold ${
-                    carrier === c
-                      ? "border-blue-500 bg-blue-500/20 text-blue-300"
-                      : "border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500"
-                  }`}
+                  className="py-3 px-4 rounded-xl border-2 transition-all text-sm font-semibold"
+                  style={{
+                    borderColor: carrier === c ? "var(--color-accent-blue)" : "var(--color-border)",
+                    background: carrier === c ? "rgba(59,130,246,0.12)" : "var(--color-card)",
+                    color: carrier === c ? "var(--color-accent-blue)" : "var(--color-secondary)",
+                  }}
                 >
                   {c === "ghn" ? "🟠 GHN" : "🟧 SPX"}
                 </button>
@@ -109,7 +112,7 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
 
           {/* Code input */}
           <div>
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-medium uppercase tracking-wider mb-2 block" style={{ color: "var(--color-muted)" }}>
               Mã vận đơn *
             </label>
             <input
@@ -118,7 +121,12 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder={carrier === "ghn" ? "VD: LXK4U2KH" : "VD: SPXVN036012345"}
-              className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 font-mono text-sm transition-colors"
+              className="w-full rounded-xl px-4 py-3 font-mono text-sm transition-colors focus:outline-none"
+              style={{
+                background: "var(--color-bg)",
+                border: `1px solid ${error ? "var(--color-accent-red)" : "var(--color-border)"}`,
+                color: "var(--color-primary)",
+              }}
               disabled={loading}
               autoComplete="off"
               spellCheck={false}
@@ -127,28 +135,25 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
             {clipboardSuggestion && !code && (
               <button
                 type="button"
-                onClick={() => {
-                  setCode(clipboardSuggestion);
-                  setClipboardSuggestion(null);
-                  inputRef.current?.focus();
-                }}
-                className="mt-2 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/25 hover:bg-blue-500/20 transition-colors text-left"
+                onClick={() => { setCode(clipboardSuggestion); setClipboardSuggestion(null); inputRef.current?.focus(); }}
+                className="mt-2 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors text-left"
+                style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}
               >
                 <span className="text-base shrink-0">📋</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-blue-400 font-medium leading-none mb-0.5">Dán từ clipboard?</div>
-                  <div className="text-xs text-blue-300 font-mono truncate">{clipboardSuggestion}</div>
+                  <div className="text-xs font-medium leading-none mb-0.5" style={{ color: "var(--color-accent-blue)" }}>Dán từ clipboard?</div>
+                  <div className="text-xs font-mono truncate" style={{ color: "var(--color-secondary)" }}>{clipboardSuggestion}</div>
                 </div>
-                <span className="text-xs text-blue-500 shrink-0 font-medium">Dán →</span>
+                <span className="text-xs shrink-0 font-medium" style={{ color: "var(--color-accent-blue)" }}>Dán →</span>
               </button>
             )}
-            {error && <p className="text-red-400 text-xs mt-1.5">⚠️ {error}</p>}
+            {error && <p className="text-xs mt-1.5" style={{ color: "var(--color-accent-red)" }}>⚠️ {error}</p>}
           </div>
 
           {/* Nickname input */}
           <div>
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 block">
-              Ghi chú <span className="text-slate-600 normal-case">(tuỳ chọn)</span>
+            <label className="text-xs font-medium uppercase tracking-wider mb-2 block" style={{ color: "var(--color-muted)" }}>
+              Ghi chú <span className="normal-case" style={{ color: "var(--color-muted)", opacity: 0.5 }}>(tuỳ chọn)</span>
             </label>
             <input
               type="text"
@@ -156,7 +161,8 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
               onChange={(e) => setNickname(e.target.value)}
               placeholder="VD: iPhone 15 cho chị Lan"
               maxLength={60}
-              className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 text-sm transition-colors"
+              className="w-full rounded-xl px-4 py-3 text-sm transition-colors focus:outline-none"
+              style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}
               disabled={loading}
             />
           </div>
@@ -166,7 +172,8 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors text-sm font-medium"
+              className="flex-1 py-3 rounded-xl text-sm font-medium transition-colors"
+              style={{ border: "1px solid var(--color-border)", color: "var(--color-secondary)" }}
               disabled={loading}
             >
               Huỷ
@@ -174,16 +181,15 @@ export default function AddTrackingModal({ open, onClose, onAdd, loading }: Prop
             <button
               type="submit"
               disabled={loading || !code.trim()}
-              className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              style={{ background: "var(--color-accent-blue)", color: "#fff" }}
             >
               {loading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Đang thêm...
                 </>
-              ) : (
-                "➕ Thêm đơn"
-              )}
+              ) : "➕ Thêm đơn"}
             </button>
           </div>
         </form>

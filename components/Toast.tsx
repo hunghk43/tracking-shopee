@@ -16,21 +16,21 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-const ICONS = {
+const ICONS: Record<ToastItem["type"], string> = {
   success: "✅",
-  error: "❌",
-  info: "ℹ️",
+  error:   "❌",
+  info:    "ℹ️",
   warning: "⚠️",
 };
 
-const COLORS = {
-  success: "border-green-500/50 bg-green-950/90",
-  error: "border-red-500/50 bg-red-950/90",
-  info: "border-blue-500/50 bg-blue-950/90",
-  warning: "border-orange-500/50 bg-orange-950/90",
+const BORDER_COLORS: Record<ToastItem["type"], string> = {
+  success: "var(--color-accent-green)",
+  error:   "var(--color-accent-red)",
+  info:    "var(--color-accent-blue)",
+  warning: "var(--color-accent-yellow)",
 };
 
-function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: string) => void }) {
+function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (id: string) => void }) {
   const [exiting, setExiting] = useState(false);
 
   const handleRemove = useCallback(() => {
@@ -46,36 +46,66 @@ function ToastItem({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border p-4 shadow-2xl backdrop-blur-sm w-full min-w-[280px] max-w-[380px] cursor-pointer
-        ${COLORS[toast.type]} ${exiting ? "toast-out" : "toast-in"}`}
+      role="alert"
+      aria-live="polite"
+      className={`flex items-start gap-3 rounded-xl p-4 w-full min-w-[280px] max-w-[380px] cursor-pointer backdrop-blur-sm
+        ${exiting ? "toast-out" : "toast-in"}`}
+      style={{
+        background: "var(--color-card)",
+        border: `1px solid ${BORDER_COLORS[toast.type]}40`,
+        borderLeft: `3px solid ${BORDER_COLORS[toast.type]}`,
+        boxShadow: "var(--shadow-modal)",
+      }}
       onClick={handleRemove}
     >
-      <span className="text-xl mt-0.5 shrink-0">{ICONS[toast.type]}</span>
+      <span className="text-xl mt-0.5 shrink-0" aria-hidden="true">{ICONS[toast.type]}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-100">{toast.title}</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+          {toast.title}
+        </p>
         {toast.message && (
-          <p className="text-xs text-slate-300 mt-0.5 break-words">{toast.message}</p>
+          <p className="text-xs mt-0.5 break-words" style={{ color: "var(--color-secondary)" }}>
+            {toast.message}
+          </p>
         )}
         {toast.action && (
           <button
             onClick={(e) => { e.stopPropagation(); toast.action!.onClick(); handleRemove(); }}
-            className="mt-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+            className="mt-1.5 text-xs font-semibold underline underline-offset-2 transition-colors hover:opacity-80"
+            style={{ color: "var(--color-accent-blue)" }}
           >
             {toast.action.label}
           </button>
         )}
       </div>
-      <button className="text-slate-400 hover:text-slate-200 text-lg leading-none shrink-0">×</button>
+      <button
+        className="text-lg leading-none shrink-0 transition-colors hover:opacity-80"
+        style={{ color: "var(--color-muted)" }}
+        aria-label="Đóng thông báo"
+      >
+        ×
+      </button>
     </div>
   );
 }
 
 export default function ToastContainer({ toasts, onRemove }: Props) {
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-[calc(100vw-2rem)]">
-      {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} onRemove={onRemove} />
-      ))}
-    </div>
+    <>
+      {/* Desktop: top-right */}
+      <div className="fixed top-4 right-4 z-50 hidden sm:flex flex-col gap-2 max-w-[calc(100vw-2rem)]"
+        aria-label="Thông báo" role="region">
+        {toasts.map((t) => (
+          <ToastItemComponent key={t.id} toast={t} onRemove={onRemove} />
+        ))}
+      </div>
+      {/* Mobile: bottom, avoids BottomNav */}
+      <div className="fixed bottom-[72px] left-4 right-4 z-50 flex sm:hidden flex-col gap-2"
+        aria-label="Thông báo" role="region">
+        {toasts.map((t) => (
+          <ToastItemComponent key={t.id} toast={t} onRemove={onRemove} />
+        ))}
+      </div>
+    </>
   );
 }

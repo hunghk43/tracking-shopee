@@ -81,24 +81,28 @@ function CronModal({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative w-full max-w-sm bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden slide-in-up sm:fade-in-scale"
+        style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-modal)" }}>
         {/* Handle (mobile) */}
         <div className="flex justify-center pt-3 pb-0 sm:hidden">
-          <div className="w-10 h-1 bg-slate-600 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--color-border)" }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <span className="text-sm font-semibold text-white">🔄 Tự động theo dõi</span>
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <span className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>🔄 Tự động theo dõi</span>
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              isHealthy ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"
-            }`}>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{
+                background: isHealthy ? "rgba(34,197,94,0.15)" : "rgba(249,115,22,0.15)",
+                color: isHealthy ? "var(--color-accent-green)" : "var(--color-accent-orange)",
+              }}>
               {isHealthy ? "Hoạt động" : "Chậm trễ"}
             </span>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors text-lg leading-none"
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-lg leading-none"
+              style={{ color: "var(--color-muted)" }}
             >
               ×
             </button>
@@ -108,60 +112,60 @@ function CronModal({
         <div className="p-4 space-y-3">
           {/* Last scan */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">Quét cuối</span>
-            <span className="text-xs text-slate-200 font-medium">{lastCheckedDisplay}</span>
+            <span className="text-xs" style={{ color: "var(--color-muted)" }}>Quét cuối</span>
+            <span className="text-xs font-medium" style={{ color: "var(--color-secondary)" }}>{lastCheckedDisplay}</span>
           </div>
 
           {/* Countdown */}
           {status.last_checked_at && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-slate-400">Quét tiếp theo</span>
-                <span className="text-xs text-blue-400 font-medium tabular-nums">{countdown}</span>
+                <span className="text-xs" style={{ color: "var(--color-muted)" }}>Quét tiếp theo</span>
+                <span className="text-xs font-medium tabular-nums" style={{ color: "var(--color-accent-blue)" }}>{countdown}</span>
               </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
                 <div
-                  className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                  style={{ width: `${progress}%` }}
+                  className="h-full rounded-full transition-all duration-1000"
+                  style={{ width: `${progress}%`, background: "var(--color-accent-blue)" }}
                 />
               </div>
             </div>
           )}
 
-          <div className="h-px bg-slate-700/50" />
+          <div className="h-px" style={{ background: "var(--color-border)" }} />
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-900/60 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-white">{status.active_count}</div>
-              <div className="text-xs text-slate-500 mt-0.5">đơn đang theo dõi</div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "var(--color-card)" }}>
+              <div className="text-2xl font-bold" style={{ color: "var(--color-primary)" }}>{status.active_count}</div>
+              <div className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>đơn đang theo dõi</div>
             </div>
-            <div className="bg-slate-900/60 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-blue-400">{status.interval_minutes}p</div>
-              <div className="text-xs text-slate-500 mt-0.5">chu kỳ quét</div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "var(--color-card)" }}>
+              <div className="text-2xl font-bold" style={{ color: "var(--color-accent-blue)" }}>{status.interval_minutes}p</div>
+              <div className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>chu kỳ quét</div>
             </div>
           </div>
 
           {/* Info */}
-          <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl px-3 py-2.5">
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.15)" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--color-muted)" }}>
               Bot tự động kiểm tra{" "}
-              <span className="text-blue-400 font-medium">mỗi 15 phút</span>{" "}
+              <span className="font-medium" style={{ color: "var(--color-accent-blue)" }}>mỗi 15 phút</span>{" "}
               và gửi thông báo khi trạng thái đơn thay đổi.
             </p>
           </div>
 
           {!isHealthy && status.last_checked_at && (
-            <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl px-3 py-2.5">
-              <p className="text-xs text-orange-400">
+            <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(249,115,22,0.05)", border: "1px solid rgba(249,115,22,0.2)" }}>
+              <p className="text-xs" style={{ color: "var(--color-accent-orange)" }}>
                 ⚠️ Lần quét cuối hơn 8 phút. App đang tự kích hoạt quét bù khi bạn mở tab.
               </p>
             </div>
           )}
 
           {!status.last_checked_at && (
-            <div className="bg-slate-700/30 rounded-xl px-3 py-2.5">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-xl px-3 py-2.5" style={{ background: "var(--color-card)" }}>
+              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                 ℹ️ Chưa có lần quét nào. Thêm đơn để bắt đầu theo dõi.
               </p>
             </div>
@@ -209,25 +213,27 @@ export default function CronStatusBar({ userId }: Props) {
     ? Date.now() - new Date(status.last_checked_at).getTime() < 8 * 60 * 1000
     : false;
 
+  const btnStyle = isHealthy
+    ? { background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", color: "var(--color-accent-green)" }
+    : status.last_checked_at
+      ? { background: "rgba(234,88,12,0.08)", border: "1px solid rgba(234,88,12,0.25)", color: "var(--color-accent-orange)" }
+      : { background: "var(--color-border)", border: "1px solid var(--color-border)", color: "var(--color-muted)" };
+
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-          isHealthy
-            ? "bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20"
-            : status.last_checked_at
-              ? "bg-orange-500/10 border-orange-500/20 text-orange-400"
-              : "bg-slate-800 border-slate-700 text-slate-400"
-        }`}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+        style={btnStyle}
         title={countdown ? `Quét tiếp theo: ${countdown}` : "Xem trạng thái tự động quét"}
       >
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-          isHealthy ? "bg-green-400 pulse-dot" : "bg-orange-400"
-        }`} />
+        <span
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${isHealthy ? "pulse-dot" : ""}`}
+          style={{ background: isHealthy ? "var(--color-accent-green)" : "var(--color-accent-orange)" }}
+        />
         <span className="hidden sm:inline">{status.active_count} đơn</span>
         {countdown && (
-          <span className="hidden md:inline text-slate-500 tabular-nums">· {countdown}</span>
+          <span className="hidden md:inline tabular-nums" style={{ color: "var(--color-muted)" }}>· {countdown}</span>
         )}
       </button>
 

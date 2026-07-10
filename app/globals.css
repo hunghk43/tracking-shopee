@@ -1,139 +1,265 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN TOKEN SYSTEM — Shopee Warm Light Theme
+   Warm off-white base, clear contrast, easy on the eyes.
+   ============================================================ */
 :root {
-  --bg-primary: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-hover: #263348;
-  --bg-input: #0f172a;
-  --border: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --accent-blue: #3b82f6;
-  --accent-green: #22c55e;
-  --accent-red: #ef4444;
-  --accent-orange: #f97316;
-  --accent-purple: #a855f7;
+  /* Background & Surface */
+  --color-bg:       #F0F2F5;   /* xám ấm nhẹ — không chói */
+  --color-surface:  #FFFFFF;   /* card trắng nổi trên nền */
+  --color-card:     #FFFFFF;
+  --color-border:   #E5E7EB;   /* đường viền rõ nhưng nhẹ */
+
+  /* Typography Colors */
+  --color-primary:   #111827;  /* text chính — đen đậm */
+  --color-secondary: #374151;  /* text phụ */
+  --color-muted:     #6B7280;  /* text mờ */
+
+  /* Accent Colors — Shopee + standard UI */
+  --color-accent-blue:   #2563EB;
+  --color-accent-green:  #16A34A;
+  --color-accent-yellow: #D97706;
+  --color-accent-red:    #DC2626;
+  --color-accent-cyan:   #0891B2;
+  --color-accent-orange: #EA580C;
+
+  /* Shopee brand */
+  --color-shopee:        #EE4D2D;
+  --color-shopee-light:  #FFF1EE;
+  --color-shopee-dark:   #C73D20;
+
+  /* Font Sizes */
+  --font-size-xs:   12px;
+  --font-size-sm:   14px;
+  --font-size-base: 16px;
+  --font-size-lg:   18px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
+
+  /* Border Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows — rõ hơn trên nền sáng */
+  --shadow-card:  0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-panel: 0 4px 16px rgba(0,0,0,0.10), 0 8px 32px rgba(0,0,0,0.07);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.15), 0 20px 48px rgba(0,0,0,0.10);
+
+  /* Legacy aliases */
+  --bg-primary:    var(--color-bg);
+  --bg-card:       var(--color-surface);
+  --bg-card-hover: #FDF4F2;
+  --bg-input:      #FFFFFF;
+  --border:        var(--color-border);
+  --text-primary:  var(--color-primary);
+  --text-secondary: var(--color-muted);
+  --accent-blue:   var(--color-accent-blue);
+  --accent-green:  var(--color-accent-green);
+  --accent-red:    var(--color-accent-red);
+  --accent-orange: var(--color-accent-orange);
+  --accent-purple: #7C3AED;
 }
 
+/* ============================================================
+   BASE RESET
+   ============================================================ */
 * {
   box-sizing: border-box;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--color-bg);
+  color: var(--color-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--font-size-base);
   min-height: 100vh;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-card);
-}
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F0F0F0; }
+::-webkit-scrollbar-thumb { background: #CCCCCC; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #AAAAAA; }
+
+/* ============================================================
+   FOCUS RINGS (WCAG 2.1 AA)
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-shopee);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-/* Card animations */
-.card-hover {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.card-hover:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-/* Skeleton loading */
+/* ============================================================
+   SKELETON SHIMMER
+   ============================================================ */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 .skeleton {
   background: linear-gradient(
     90deg,
-    #1e293b 25%,
-    #263348 50%,
-    #1e293b 75%
+    #F0F0F0 25%,
+    #E8E8E8 50%,
+    #F0F0F0 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
-/* Pulse dot */
+/* ============================================================
+   PULSE ANIMATIONS
+   ============================================================ */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
 }
-.pulse-dot {
-  animation: pulse-dot 2s infinite;
+.pulse-dot { animation: pulse-dot 2s infinite; }
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 1.6s ease-out infinite;
 }
 
-/* Slide in from right */
+/* ============================================================
+   SLIDE / FADE TRANSITIONS
+   ============================================================ */
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
-.slide-in-right {
-  animation: slideInRight 0.3s ease-out;
-}
+.slide-in-right { animation: slideInRight 0.3s ease-out; }
 
-/* Slide in from bottom (mobile bottom sheet) */
 @keyframes slideInUp {
   from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
-.slide-in-up {
-  animation: slideInUp 0.3s ease-out;
-}
+.slide-in-up { animation: slideInUp 0.3s ease-out; }
 
-/* Fade in */
+@keyframes slideOutDown {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+.slide-out-down { animation: slideOutDown 0.25s ease-in forwards; }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
+.fade-in { animation: fadeIn 0.2s ease-out; }
 
-/* Progress bar */
-@keyframes progress {
-  0% { width: 0%; }
-  100% { width: 100%; }
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }
+.fade-in-scale { animation: fadeInScale 0.2s ease-out; }
 
-/* Toast notification */
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
 @keyframes toastIn {
   from { transform: translateX(calc(100% + 1rem)); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 @keyframes toastOut {
   from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(calc(100% + 1rem)); opacity: 0; }
+  to   { transform: translateX(calc(100% + 1rem)); opacity: 0; }
 }
-.toast-in { animation: toastIn 0.3s ease-out forwards; }
-.toast-out { animation: toastOut 0.3s ease-in forwards; }
+.toast-in  { animation: toastIn  0.3s ease-out forwards; }
+.toast-out { animation: toastOut 0.3s ease-in  forwards; }
 
-/* Status badge glow */
-.badge-delivered { box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
-.badge-intransit { box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
-.badge-cancelled { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
-.badge-returned { box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
+/* ============================================================
+   STATUS BADGE GLOW EFFECTS
+   ============================================================ */
+.badge-delivered { box-shadow: 0 0 8px rgba(0,  166, 80,  0.25); }
+.badge-intransit { box-shadow: 0 0 8px rgba(24,  144, 255, 0.25); }
+.badge-cancelled { box-shadow: 0 0 8px rgba(238, 77,  45,  0.25); }
+.badge-returned  { box-shadow: 0 0 8px rgba(238, 77,  45,  0.20); }
 
-/* Highlight flash khi đơn có status mới */
+/* ============================================================
+   HIGHLIGHT FLASH — new status detected
+   ============================================================ */
 @keyframes highlightFlash {
-  0%   { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.6); background-color: rgba(59, 130, 246, 0.15); }
-  60%  { box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2); background-color: rgba(59, 130, 246, 0.06); }
+  0%   { box-shadow: 0 0 0 2px rgba(238,77,45,0.5); background-color: rgba(238,77,45,0.06); }
+  60%  { box-shadow: 0 0 0 1px rgba(238,77,45,0.15); background-color: rgba(238,77,45,0.03); }
   100% { box-shadow: none; background-color: transparent; }
 }
-.tracking-updated {
-  animation: highlightFlash 2.5s ease-out forwards;
+.tracking-updated { animation: highlightFlash 2.5s ease-out forwards; }
+
+/* ============================================================
+   CARD HOVER (legacy helper, still used in a few places)
+   ============================================================ */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ============================================================
+   SPX PROGRESS BAR — animated line fill
+   ============================================================ */
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: var(--fill-width, 0%); }
+}
+.spx-line-fill {
+  animation: progressFill 0.5s ease-out forwards;
+}
+
+/* ============================================================
+   BULK TOOLBAR SLIDE
+   ============================================================ */
+@keyframes bulkToolbarIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes bulkToolbarOut {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+.bulk-toolbar-in  { animation: bulkToolbarIn  0.25s ease-out forwards; }
+.bulk-toolbar-out { animation: bulkToolbarOut 0.25s ease-in  forwards; }
+
+/* ============================================================
+   GLASS EFFECT — light version
+   ============================================================ */
+.glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+@keyframes progress {
+  0%   { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* ============================================================
+   REDUCED MOTION OVERRIDE
+   Respect system preferences — disable or simplify all
+   non-essential animations.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

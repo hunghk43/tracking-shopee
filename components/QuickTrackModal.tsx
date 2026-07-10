@@ -85,34 +85,41 @@ export default function QuickTrackModal({ open, onClose, onSave }: Props) {
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
-      <div className="relative w-full max-w-lg bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl fade-in overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col slide-in-up sm:fade-in-scale"
+        style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-modal)" }}>
+        {/* Handle indicator for mobile */}
+        <div className="flex justify-center pt-2.5 pb-0 sm:hidden">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--color-border)" }} />
+        </div>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-700 shrink-0">
+        <div className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
           <div>
-            <h2 className="text-lg font-bold text-white">🔍 Tra cứu nhanh</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Không lưu vào danh sách</p>
+            <h2 className="text-lg font-bold" style={{ color: "var(--color-primary)" }}>🔍 Tra cứu nhanh</h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>Không lưu vào danh sách</p>
           </div>
           <button
             onClick={handleClose}
-            className="text-slate-400 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 transition-colors"
+            className="text-2xl w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--color-muted)" }}
           >
             ×
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleTrack} className="p-4 border-b border-slate-700 shrink-0">
+        <form onSubmit={handleTrack} className="p-4 shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
           <div className="flex gap-2 mb-3">
             {(["ghn", "spx"] as Carrier[]).map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setCarrier(c)}
-                className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                  carrier === c
-                    ? "border-blue-500 bg-blue-500/20 text-blue-300"
-                    : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
-                }`}
+                className="flex-1 py-2 rounded-xl border text-sm font-semibold transition-all"
+                style={{
+                  borderColor: carrier === c ? "var(--color-accent-blue)" : "var(--color-border)",
+                  background: carrier === c ? "rgba(59,130,246,0.12)" : "var(--color-card)",
+                  color: carrier === c ? "var(--color-accent-blue)" : "var(--color-secondary)",
+                }}
               >
                 {c === "ghn" ? "🟠 GHN" : "🟧 SPX"}
               </button>
@@ -124,21 +131,23 @@ export default function QuickTrackModal({ open, onClose, onSave }: Props) {
               value={code}
               onChange={(e) => handleCodeChange(e.target.value)}
               placeholder="Nhập mã vận đơn..."
-              className="flex-1 bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-sm"
+              className="flex-1 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none transition-colors"
+              style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}
               autoFocus
               autoComplete="off"
             />
             <button
               type="submit"
               disabled={loading || !code.trim()}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold text-sm transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 disabled:opacity-40"
+              style={{ background: "var(--color-accent-blue)", color: "#fff" }}
             >
               {loading ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : "Tra"}
             </button>
           </div>
-          {error && <p className="text-red-400 text-xs mt-1.5">⚠️ {error}</p>}
+          {error && <p className="text-xs mt-1.5" style={{ color: "var(--color-accent-red)" }}>⚠️ {error}</p>}
         </form>
 
         {/* Result */}
@@ -158,11 +167,9 @@ export default function QuickTrackModal({ open, onClose, onSave }: Props) {
             {result?.ok && onSave && (
               <div className="p-4 pt-0">
                 <button
-                  onClick={() => {
-                    onSave(trackedCarrier, trackedCode);
-                    handleClose();
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  onClick={() => { onSave(trackedCarrier, trackedCode); handleClose(); }}
+                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 hover:opacity-90"
+                  style={{ background: "var(--color-accent-green)", color: "#fff" }}
                 >
                   ➕ Lưu vào danh sách theo dõi
                 </button>
@@ -171,10 +178,9 @@ export default function QuickTrackModal({ open, onClose, onSave }: Props) {
           </div>
         )}
 
-        {/* Carrier info */}
         {!result && !loading && (
           <div className="p-4">
-            <div className="text-xs text-slate-500 text-center">
+            <div className="text-xs text-center" style={{ color: "var(--color-muted)" }}>
               {carrierDisplay(carrier)} · Kết quả tra cứu sẽ hiện ngay bên dưới
             </div>
           </div>

@@ -7,18 +7,18 @@ function getStatusInfo(t: Tracking | { last_status?: string | null; is_delivered
   const isDelivered = (t as Tracking).is_delivered;
 
   if (isDelivered || s.includes("giao hàng thành công") || s.includes("delivered")) {
-    return { label: "Đã giao", color: "bg-green-500/20 text-green-400 border-green-500/30 badge-delivered", icon: "✅" };
+    return { label: "Đã giao", color: "badge-delivered", style: { background: "#DCFCE7", color: "#15803D", border: "1px solid #BBF7D0" }, icon: "✅" };
   }
   if (s.includes("huỷ") || s.includes("hủy") || s.includes("cancel")) {
-    return { label: "Đã hủy", color: "bg-red-500/20 text-red-400 border-red-500/30 badge-cancelled", icon: "❌" };
+    return { label: "Đã hủy", color: "badge-cancelled", style: { background: "#FEE2E2", color: "#B91C1C", border: "1px solid #FECACA" }, icon: "❌" };
   }
   if (s.includes("hoàn") || s.includes("trả về") || s.includes("return")) {
-    return { label: "Đang hoàn", color: "bg-orange-500/20 text-orange-400 border-orange-500/30 badge-returned", icon: "↩️" };
+    return { label: "Đang hoàn", color: "badge-returned", style: { background: "#FEF3C7", color: "#B45309", border: "1px solid #FDE68A" }, icon: "↩️" };
   }
   if (s) {
-    return { label: "Đang VC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30 badge-intransit", icon: "🚚" };
+    return { label: "Đang VC", color: "badge-intransit", style: { background: "#DBEAFE", color: "#1D4ED8", border: "1px solid #BFDBFE" }, icon: "🚚" };
   }
-  return { label: "Chưa tra", color: "bg-slate-500/20 text-slate-400 border-slate-500/30", icon: "📦" };
+  return { label: "Chưa tra", color: "", style: { background: "#F3F4F6", color: "#6B7280", border: "1px solid #E5E7EB" }, icon: "📦" };
 }
 
 interface Props {
@@ -31,7 +31,10 @@ export default function StatusBadge({ tracking, size = "sm" }: Props) {
   const cls = size === "sm" ? "text-xs px-2 py-0.5" : "text-sm px-3 py-1";
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border font-medium ${cls} ${info.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full font-medium ${cls} ${info.color}`}
+      style={info.style}
+    >
       <span>{info.icon}</span>
       <span>{info.label}</span>
     </span>

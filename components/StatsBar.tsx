@@ -8,80 +8,149 @@ interface Props {
   onFilter: (f: FilterMode) => void;
 }
 
-const CARDS = [
+interface CardConfig {
+  key: FilterMode;
+  label: string;
+  field: keyof TrackingStats | null;
+  icon: string;
+  accentColor: string;
+  bgActive: string;
+  borderActive: string;
+  iconBg: string;
+  trendLabel: string;
+}
+
+const CARDS: CardConfig[] = [
   {
-    key: "all" as FilterMode,
+    key: "all",
     label: "Tất cả",
-    field: "total" as keyof TrackingStats,
+    field: "total",
     icon: "📦",
-    color: "from-slate-700 to-slate-600",
-    active: "from-slate-500 to-slate-400",
-    border: "border-slate-500/50",
+    accentColor: "#374151",
+    bgActive: "#F9FAFB",
+    borderActive: "#374151",
+    iconBg: "#F3F4F6",
+    trendLabel: "đơn",
   },
   {
-    key: "intransit" as FilterMode,
-    label: "Đang VC",
-    field: "in_transit" as keyof TrackingStats,
+    key: "intransit",
+    label: "Đang vận chuyển",
+    field: "in_transit",
     icon: "🚚",
-    color: "from-blue-900 to-blue-800",
-    active: "from-blue-600 to-blue-500",
-    border: "border-blue-500/50",
+    accentColor: "#2563EB",
+    bgActive: "#EFF6FF",
+    borderActive: "#2563EB",
+    iconBg: "#DBEAFE",
+    trendLabel: "đang di chuyển",
   },
   {
-    key: "delivered" as FilterMode,
+    key: "delivered",
     label: "Đã giao",
-    field: "delivered" as keyof TrackingStats,
+    field: "delivered",
     icon: "✅",
-    color: "from-green-900 to-green-800",
-    active: "from-green-600 to-green-500",
-    border: "border-green-500/50",
+    accentColor: "#16A34A",
+    bgActive: "#F0FDF4",
+    borderActive: "#16A34A",
+    iconBg: "#DCFCE7",
+    trendLabel: "đã nhận hàng",
   },
   {
-    key: "cancelled" as FilterMode,
-    label: "Hủy/Hoàn",
-    field: null,
-    icon: "↩️",
-    color: "from-orange-900 to-orange-800",
-    active: "from-orange-600 to-orange-500",
-    border: "border-orange-500/50",
+    key: "cancelled",
+    label: "Đã hủy",
+    field: "cancelled",
+    icon: "❌",
+    accentColor: "#DC2626",
+    bgActive: "#FEF2F2",
+    borderActive: "#DC2626",
+    iconBg: "#FEE2E2",
+    trendLabel: "bị hủy",
   },
 ];
 
 export default function StatsBar({ stats, filter, onFilter }: Props) {
-  const getCancelledCount = () => stats.cancelled + stats.returned;
-
-  const getCount = (card: (typeof CARDS)[number]) => {
-    if (card.field) return stats[card.field];
-    return getCancelledCount();
+  const getCount = (card: CardConfig) => {
+    if (card.key === "cancelled") return stats.cancelled + stats.returned;
+    if (card.field) return stats[card.field] as number;
+    return 0;
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div
+      className="grid grid-cols-2 md:grid-cols-4 gap-3"
+      role="group"
+      aria-label="Bộ lọc theo trạng thái"
+    >
       {CARDS.map((card) => {
         const count = getCount(card);
         const isActive = filter === card.key;
+
         return (
           <button
             key={card.key}
             onClick={() => onFilter(card.key)}
-            className={`
-              relative rounded-xl p-4 text-left transition-all duration-200
-              bg-gradient-to-br border cursor-pointer
-              ${isActive ? `${card.active} ${card.border} shadow-lg scale-[1.02]` : `${card.color} border-slate-700/50 hover:border-slate-500/50`}
-            `}
+            aria-pressed={isActive}
+            aria-label={`${card.label}: ${count} đơn`}
+            className="relative rounded-xl p-4 text-left cursor-pointer transition-all duration-200 overflow-hidden group"
+            style={{
+              background: isActive ? card.bgActive : "var(--color-card)",
+              border: `1.5px solid ${isActive ? card.borderActive : "var(--color-border)"}`,
+              boxShadow: isActive
+                ? `0 4px 16px ${card.accentColor}22, var(--shadow-card)`
+                : "var(--shadow-card)",
+              transform: isActive ? "scale(1.02)" : "scale(1)",
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                (e.currentTarget as HTMLElement).style.borderColor = card.accentColor + "80";
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${card.accentColor}18, var(--shadow-card)`;
+                (e.currentTarget as HTMLElement).style.transform = "scale(1.01)";
+                (e.currentTarget as HTMLElement).style.background = card.bgActive;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--color-border)";
+                (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-card)";
+                (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                (e.currentTarget as HTMLElement).style.background = "var(--color-card)";
+              }
+            }}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{card.icon}</span>
-              {isActive && (
-                <div className="w-2 h-2 rounded-full bg-white/70 pulse-dot" />
-              )}
-            </div>
-            <div className="mt-2">
-              <div className="text-2xl font-bold text-white">{count}</div>
-              <div className="text-xs text-white/70 mt-0.5">{card.label}</div>
-            </div>
+            {/* Pulsing dot when active */}
             {isActive && (
-              <div className="absolute inset-0 rounded-xl ring-2 ring-white/20 pointer-events-none" />
+              <span
+                className="absolute top-3 right-3 w-2 h-2 rounded-full pulse-dot"
+                style={{ background: card.accentColor }}
+              />
+            )}
+
+            {/* Icon */}
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-lg mb-3 transition-colors"
+              style={{ background: card.iconBg }}
+            >
+              {card.icon}
+            </div>
+
+            {/* Count */}
+            <div
+              className="text-2xl font-bold leading-none mb-1 tabular-nums"
+              style={{ color: isActive ? card.accentColor : "var(--color-primary)" }}
+            >
+              {count}
+            </div>
+
+            {/* Label */}
+            <div className="text-xs font-medium" style={{ color: isActive ? card.accentColor : "var(--color-muted)" }}>
+              {card.label}
+            </div>
+
+            {/* Active ring overlay */}
+            {isActive && (
+              <div
+                className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ boxShadow: `inset 0 0 0 1.5px ${card.borderActive}` }}
+              />
             )}
           </button>
         );

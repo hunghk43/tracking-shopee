@@ -3,7 +3,7 @@
 // milestone_code từ API SPX:
 // 1 = Preparing to ship
 // 2 = Picked up (đang lấy)
-// 3 = Picked up thành công  
+// 3 = Picked up thành công
 // 4 = Sorting (phân loại)
 // 5 = In transit (đang vận chuyển)
 // 6 = At delivery station (đến trạm giao)
@@ -34,67 +34,144 @@ interface Props {
 }
 
 export default function SpxProgressBar({ milestoneCode, isCancelled }: Props) {
+  /* ── Special states ─────────────────────────────────────────── */
   if (isCancelled || milestoneCode === -1) {
     return (
-      <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-center gap-2">
+      <div
+        className="rounded-xl px-4 py-3 flex items-center gap-2"
+        style={{
+          background: "rgba(239,68,68,0.08)",
+          border: "1px solid rgba(239,68,68,0.2)",
+        }}
+      >
         <span className="text-lg">❌</span>
-        <span className="text-sm text-red-400 font-medium">Đơn hàng đã bị hủy</span>
+        <span className="text-sm font-medium" style={{ color: "var(--color-accent-red)" }}>
+          Đơn hàng đã bị hủy
+        </span>
       </div>
     );
   }
 
   if (milestoneCode === 9) {
     return (
-      <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3 flex items-center gap-2">
+      <div
+        className="rounded-xl px-4 py-3 flex items-center gap-2"
+        style={{
+          background: "rgba(249,115,22,0.08)",
+          border: "1px solid rgba(249,115,22,0.2)",
+        }}
+      >
         <span className="text-lg">↩️</span>
-        <span className="text-sm text-orange-400 font-medium">Đang hoàn hàng về người gửi</span>
+        <span className="text-sm font-medium" style={{ color: "var(--color-accent-orange)" }}>
+          Đang hoàn hàng về người gửi
+        </span>
       </div>
     );
   }
 
   const currentStep = getStepIndex(milestoneCode);
   const isDelivered = milestoneCode >= 8;
+  const fillPct = Math.min(100, (currentStep / (STEPS.length - 1)) * 100);
 
   return (
-    <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-      <div className="text-xs text-slate-400 mb-3 font-medium">📍 Tiến trình đơn hàng</div>
+    <div
+      className="rounded-xl p-4"
+      style={{
+        background: "var(--color-card)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <div className="text-xs font-semibold mb-4" style={{ color: "var(--color-muted)" }}>
+        📍 Tiến trình đơn hàng
+      </div>
 
-      {/* Steps */}
       <div className="relative flex items-start justify-between">
-        {/* Connecting line */}
-        <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-700">
-          <div
-            className={`h-full transition-all duration-500 ${isDelivered ? "bg-green-500" : "bg-blue-500"}`}
-            style={{ width: `${Math.min(100, (currentStep / (STEPS.length - 1)) * 100)}%` }}
-          />
-        </div>
+        {/* Background connecting line */}
+        <div
+          className="absolute h-0.5 top-4 left-4 right-4 rounded-full"
+          style={{ background: "var(--color-border)" }}
+        />
+
+        {/* Filled connecting line — animated via CSS */}
+        <div
+          className="absolute h-0.5 top-4 left-4 rounded-full spx-line-fill"
+          style={{
+            background: isDelivered
+              ? "var(--color-accent-green)"
+              : `linear-gradient(to right, var(--color-accent-blue), var(--color-accent-cyan))`,
+            ["--fill-width" as string]: `calc(${fillPct}% - 0px)`,
+            right: "auto",
+          }}
+        />
 
         {STEPS.map((step, idx) => {
-          const isDone = idx < currentStep;
-          const isActive = idx === currentStep;
-          const isPending = idx > currentStep;
+          const done = idx < currentStep;
+          const active = idx === currentStep;
+          const pending = idx > currentStep;
+
+          let circleStyle: React.CSSProperties;
+          let circleContent: string;
+
+          if (done || (active && isDelivered)) {
+            circleStyle = {
+              background: "var(--color-accent-green)",
+              border: "2px solid var(--color-accent-green)",
+              color: "#fff",
+            };
+            circleContent = "✓";
+          } else if (active) {
+            circleStyle = {
+              background: "var(--color-accent-blue)",
+              border: "2px solid var(--color-accent-blue)",
+              color: "#fff",
+            };
+            circleContent = step.icon;
+          } else {
+            circleStyle = {
+              background: "var(--color-card)",
+              border: `2px solid ${pending ? "rgba(148,163,184,0.2)" : "var(--color-border)"}`,
+              color: "var(--color-muted)",
+              opacity: 0.5,
+            };
+            circleContent = step.icon;
+          }
 
           return (
-            <div key={step.milestone} className="flex flex-col items-center gap-1.5 z-10 flex-1">
-              {/* Circle */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 transition-all ${
-                isDone
-                  ? "bg-green-500 border-green-500 text-white"
-                  : isActive
-                    ? isDelivered
-                      ? "bg-green-500 border-green-500 text-white"
-                      : "bg-blue-500 border-blue-500 text-white ring-4 ring-blue-500/20"
-                    : "bg-slate-800 border-slate-600 text-slate-600"
-              }`}>
-                {isDone || (isActive && isDelivered) ? "✓" : isActive ? step.icon : step.icon}
+            <div
+              key={step.milestone}
+              className="relative flex flex-col items-center gap-2 z-10 flex-1"
+            >
+              {/* Pulse ring for active step */}
+              {active && !isDelivered && (
+                <div
+                  className="absolute top-0 w-8 h-8 rounded-full pulse-ring"
+                  style={{
+                    background: "transparent",
+                    border: `2px solid var(--color-accent-blue)`,
+                    opacity: 0.5,
+                  }}
+                />
+              )}
+
+              {/* Step circle */}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
+                style={circleStyle}
+              >
+                {circleContent}
               </div>
 
-              {/* Label */}
-              <span className={`text-xs text-center leading-tight ${
-                isDone || isActive
-                  ? isDelivered ? "text-green-400 font-medium" : "text-blue-400 font-medium"
-                  : "text-slate-600"
-              } ${isPending ? "opacity-50" : ""}`}>
+              {/* Step label */}
+              <span
+                className="text-xs text-center leading-tight"
+                style={{
+                  color: done || active
+                    ? isDelivered ? "var(--color-accent-green)" : "var(--color-accent-blue)"
+                    : "var(--color-muted)",
+                  fontWeight: active ? 600 : 400,
+                  opacity: pending ? 0.5 : 1,
+                }}
+              >
                 {step.label}
               </span>
             </div>

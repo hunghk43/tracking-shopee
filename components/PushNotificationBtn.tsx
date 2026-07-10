@@ -131,31 +131,49 @@ export default function PushNotificationBtn({ userId, onToast }: Props) {
   // Đang check
   if (supportState === "checking") return null;
 
+  // Shared tooltip panel style
+  const tooltipStyle: React.CSSProperties = {
+    background: "var(--color-surface)",
+    border: "1px solid var(--color-border)",
+    boxShadow: "var(--shadow-panel)",
+  };
+
   // iOS chưa cài lên màn hình chính
   if (supportState === "ios-not-installed") {
     return (
       <div className="relative">
         <button
           onClick={() => setShowTooltip(!showTooltip)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-medium"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+          style={{ background: "rgba(234,88,12,0.08)", border: "1px solid rgba(234,88,12,0.25)", color: "var(--color-accent-orange)" }}
         >
           🔕 <span className="hidden sm:inline">Thông báo</span>
         </button>
 
         {showTooltip && (
-          <div className="absolute right-0 top-10 w-72 bg-slate-700 border border-slate-600 rounded-xl p-4 shadow-2xl z-50 fade-in">
+          <div className="absolute right-0 top-10 w-72 rounded-xl p-4 shadow-2xl z-50 fade-in" style={tooltipStyle}>
             <button
               onClick={() => setShowTooltip(false)}
-              className="absolute top-2 right-3 text-slate-400 hover:text-white text-lg"
+              className="absolute top-2 right-3 text-lg transition-colors hover:opacity-60"
+              style={{ color: "var(--color-muted)" }}
             >×</button>
-            <p className="text-sm font-semibold text-white mb-2">📱 Cài web lên màn hình chính</p>
-            <p className="text-xs text-slate-300 mb-3">
+            <p className="text-sm font-semibold mb-2" style={{ color: "var(--color-primary)" }}>📱 Cài web lên màn hình chính</p>
+            <p className="text-xs mb-3" style={{ color: "var(--color-secondary)" }}>
               Safari trên iPhone/iPad yêu cầu cài web lên màn hình chính mới nhận được thông báo.
             </p>
-            <ol className="text-xs text-slate-300 space-y-1.5">
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">1.</span> Nhấn nút <span className="bg-slate-600 px-1 rounded">⎙ Share</span> ở thanh Safari</li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">2.</span> Chọn <span className="bg-slate-600 px-1 rounded">Add to Home Screen</span></li>
-              <li className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">3.</span> Mở app từ màn hình chính → bật thông báo</li>
+            <ol className="text-xs space-y-1.5" style={{ color: "var(--color-secondary)" }}>
+              <li className="flex gap-2">
+                <span className="font-bold shrink-0" style={{ color: "var(--color-accent-blue)" }}>1.</span>
+                Nhấn nút <span className="px-1 rounded" style={{ background: "var(--color-border)" }}>⎙ Share</span> ở thanh Safari
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold shrink-0" style={{ color: "var(--color-accent-blue)" }}>2.</span>
+                Chọn <span className="px-1 rounded" style={{ background: "var(--color-border)" }}>Add to Home Screen</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold shrink-0" style={{ color: "var(--color-accent-blue)" }}>3.</span>
+                Mở app từ màn hình chính → bật thông báo
+              </li>
             </ol>
           </div>
         )}
@@ -169,16 +187,17 @@ export default function PushNotificationBtn({ userId, onToast }: Props) {
       <div className="relative">
         <button
           onClick={() => setShowTooltip(!showTooltip)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700/50 border border-slate-700 text-slate-500 text-xs font-medium cursor-help"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-help transition-all hover:opacity-80"
+          style={{ background: "var(--color-border)", border: "1px solid var(--color-border)", color: "var(--color-muted)" }}
           title="Trình duyệt không hỗ trợ thông báo"
         >
           🔕 <span className="hidden sm:inline">Thông báo</span>
         </button>
         {showTooltip && (
-          <div className="absolute right-0 top-10 w-64 bg-slate-700 border border-slate-600 rounded-xl p-4 shadow-2xl z-50 fade-in">
-            <button onClick={() => setShowTooltip(false)} className="absolute top-2 right-3 text-slate-400 hover:text-white text-lg">×</button>
-            <p className="text-sm font-semibold text-white mb-1">Trình duyệt chưa hỗ trợ</p>
-            <p className="text-xs text-slate-300">Dùng Chrome hoặc Edge để nhận thông báo push.</p>
+          <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-2xl z-50 fade-in" style={tooltipStyle}>
+            <button onClick={() => setShowTooltip(false)} className="absolute top-2 right-3 text-lg hover:opacity-60" style={{ color: "var(--color-muted)" }}>×</button>
+            <p className="text-sm font-semibold mb-1" style={{ color: "var(--color-primary)" }}>Trình duyệt chưa hỗ trợ</p>
+            <p className="text-xs" style={{ color: "var(--color-secondary)" }}>Dùng Chrome hoặc Edge để nhận thông báo push.</p>
           </div>
         )}
       </div>
@@ -191,11 +210,12 @@ export default function PushNotificationBtn({ userId, onToast }: Props) {
       <button
         onClick={unsubscribe}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-medium transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+        style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", color: "var(--color-accent-green)" }}
         title="Click để tắt thông báo"
       >
         {loading
-          ? <span className="w-3.5 h-3.5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+          ? <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(22,163,74,0.3)", borderTopColor: "var(--color-accent-green)" }} />
           : "🔔"
         }
         <span className="hidden sm:inline">Đang bật</span>
@@ -209,17 +229,18 @@ export default function PushNotificationBtn({ userId, onToast }: Props) {
       <div className="relative">
         <button
           onClick={() => setShowTooltip(!showTooltip)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+          style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "var(--color-accent-red)" }}
         >
           🚫 <span className="hidden sm:inline">Bị chặn</span>
         </button>
         {showTooltip && (
-          <div className="absolute right-0 top-10 w-72 bg-slate-700 border border-slate-600 rounded-xl p-4 shadow-2xl z-50 fade-in">
-            <button onClick={() => setShowTooltip(false)} className="absolute top-2 right-3 text-slate-400 hover:text-white text-lg">×</button>
-            <p className="text-sm font-semibold text-white mb-2">🚫 Thông báo bị chặn</p>
-            <p className="text-xs text-slate-300 mb-2">Cần cho phép thủ công trong trình duyệt:</p>
-            <p className="text-xs text-slate-300">
-              Chrome: click 🔒 trên thanh địa chỉ → <span className="text-white">Notifications</span> → <span className="text-green-400">Allow</span>
+          <div className="absolute right-0 top-10 w-72 rounded-xl p-4 shadow-2xl z-50 fade-in" style={tooltipStyle}>
+            <button onClick={() => setShowTooltip(false)} className="absolute top-2 right-3 text-lg hover:opacity-60" style={{ color: "var(--color-muted)" }}>×</button>
+            <p className="text-sm font-semibold mb-2" style={{ color: "var(--color-primary)" }}>🚫 Thông báo bị chặn</p>
+            <p className="text-xs mb-2" style={{ color: "var(--color-secondary)" }}>Cần cho phép thủ công trong trình duyệt:</p>
+            <p className="text-xs" style={{ color: "var(--color-secondary)" }}>
+              Chrome: click 🔒 trên thanh địa chỉ → <span style={{ color: "var(--color-primary)" }}>Notifications</span> → <span style={{ color: "var(--color-accent-green)" }}>Allow</span>
             </p>
           </div>
         )}
@@ -232,11 +253,12 @@ export default function PushNotificationBtn({ userId, onToast }: Props) {
     <button
       onClick={subscribe}
       disabled={loading}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white text-xs font-medium transition-all disabled:opacity-50"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-secondary)" }}
       title="Bật thông báo khi đơn có cập nhật"
     >
       {loading
-        ? <span className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
+        ? <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(107,114,128,0.3)", borderTopColor: "var(--color-muted)" }} />
         : "🔕"
       }
       <span className="hidden sm:inline">Thông báo</span>
