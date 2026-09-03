@@ -76,7 +76,10 @@ export async function POST(req: NextRequest) {
   const result = await dbAddTracking(sb, user_id, carrier, code, nickname || null);
 
   if (result === "exists") {
-    return NextResponse.json({ message: "exists", existed: true });
+    // Đơn đã được unarchive (khôi phục) → trả về list mới để UI cập nhật
+    const trackings = await dbListUser(sb, user_id);
+    const stats = dbGetStats(trackings);
+    return NextResponse.json({ message: "exists", existed: true, trackings, stats });
   }
   if (!result) {
     return NextResponse.json({ error: "Lỗi thêm đơn" }, { status: 500 });
