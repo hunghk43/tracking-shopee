@@ -11,7 +11,7 @@ import {
 import { doTrack } from "@/lib/tracker";
 import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 
-const MAX_TRACKINGS = 100;
+const MAX_TRACKINGS = 500;
 
 // GET /api/trackings?user_id=xxx[&include_archived=true]
 export async function GET(req: NextRequest) {

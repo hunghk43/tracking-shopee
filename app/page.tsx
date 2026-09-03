@@ -22,7 +22,7 @@ import EmptyState from "@/components/EmptyState";
 import { useFaviconBadge } from "@/hooks/useFaviconBadge";
 import { usePresence } from "@/hooks/usePresence";
 
-const MAX_TRACKINGS = 100;
+const MAX_TRACKINGS = 500;
 
 function usePullToRefresh(onRefresh: () => void) {
   const startY = useRef(0);

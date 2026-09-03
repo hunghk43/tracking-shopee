@@ -20,26 +20,19 @@ export async function dbCountActive(
 async function nextDisplayId(
   sb: SupabaseClient,
   userId: string,
-  excludeId?: string
 ): Promise<number> {
-  let query = sb
+  // Lấy max display_id + 1 → số tăng dần theo thứ tự thêm vào
+  // Không tái dụng số của đơn đã xóa (gap không được lấp)
+  const { data } = await sb
     .from("trackings")
     .select("display_id")
     .eq("user_id", userId)
-    .eq("is_archived", false)
     .not("display_id", "is", null)
-    .order("display_id", { ascending: true });
+    .order("display_id", { ascending: false })
+    .limit(1);
 
-  if (excludeId) query = query.neq("id", excludeId);
-
-  const { data } = await query;
-  const used = (data || []).map((r: { display_id: number }) => r.display_id);
-  let expected = 1;
-  for (const n of used) {
-    if (n !== expected) return expected;
-    expected++;
-  }
-  return expected;
+  const max = data && data.length > 0 ? (data[0].display_id as number) : 0;
+  return max + 1;
 }
 
 export async function dbAddTracking(
@@ -85,7 +78,7 @@ export async function dbAddTracking(
 
     const newDispId =
       existing.is_archived || !existing.display_id
-        ? await nextDisplayId(sb, userId, existing.id)
+        ? await nextDisplayId(sb, userId)
         : existing.display_id;
 
     await sb
@@ -141,8 +134,7 @@ export async function dbListUser(
     .from("trackings")
     .select("*")
     .eq("user_id", userId)
-    .order("is_delivered", { ascending: true })
-    .order("created_at", { ascending: false });
+    .order("display_id", { ascending: false }); // Đơn mới nhất (số lớn) lên đầu
 
   if (!includeArchived) query = query.eq("is_archived", false);
 
@@ -291,8 +283,13 @@ export async function dbAutoArchiveOld(
 
 export async function dbGetToCheck(
   sb: SupabaseClient,
-  limit = 200
+  limit = 50
 ): Promise<Tracking[]> {
+  // Chỉ lấy đơn:
+  // - Chưa archive
+  // - Chưa giao (is_delivered = false)
+  // - Sắp xếp theo last_checked_at tăng dần (đơn lâu chưa check lên trước)
+  //   → đơn mới thêm (last_checked_at = null) được ưu tiên nhất
   const { data } = await sb
     .from("trackings")
     .select("*")
@@ -303,7 +300,7 @@ export async function dbGetToCheck(
 
   if (!data) return [];
 
-  // Lọc thêm bằng JS (Supabase không hỗ trợ NOT LIKE tốt với tiếng Việt)
+  // Lọc thêm bằng JS: bỏ đơn đã hủy/hoàn (không cần check tiếp nữa)
   return (data as Tracking[]).filter((t) => {
     const s = (t.last_status || "").toLowerCase();
     return (

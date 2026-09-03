@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { dbGetToCheck, dbUpdateStatus, dbMarkChecked, dbAutoArchiveOld } from "@/lib/db";
+import { dbGetToCheck, dbUpdateStatus, dbMarkChecked } from "@/lib/db";
 import { doTrack } from "@/lib/tracker";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -81,9 +81,9 @@ export async function GET(req: NextRequest) {
 
   const sb = createServerSupabase();
 
-  await dbAutoArchiveOld(sb);
-
-  const items = await dbGetToCheck(sb, 50); // Giới hạn 50 đơn/lần để tránh timeout 60s
+  // KHÔNG tự archive đơn nào — user tự xóa khi muốn
+  // Chỉ quét đơn đang chờ giao (chưa giao, chưa hủy, chưa hoàn)
+  const items = await dbGetToCheck(sb, 50);
   console.log(`[CRON] Checking ${items.length} trackings...`);
 
   let updated = 0;
