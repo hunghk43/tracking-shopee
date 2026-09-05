@@ -462,7 +462,7 @@ export default function SettingsPage() {
                 </div>
                 <BarChart
                   color="var(--color-shopee)"
-                  bars={s.monthlyAdded}
+                  bars={s.monthlyAdded.map(m => ({ label: m.label, value: m.count }))}
                 />
               </div>
 
