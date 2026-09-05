@@ -26,6 +26,33 @@ interface PersonalStats {
 }
 
 /* ── Helpers ────────────────────────────────────────────────── */
+
+/**
+ * Parse last_status_time từ DB — có thể là:
+ * 1. ISO string: "2026-08-15T10:30:00.000Z"
+ * 2. Format VN từ fmtIso/fmtTimestamp: "10:30 15/08/2026"
+ * 3. Chuỗi khác không parse được → trả null
+ */
+function parseStatusTime(raw: string | null | undefined): Date | null {
+  if (!raw) return null;
+
+  // Thử ISO trước
+  const iso = new Date(raw);
+  if (!isNaN(iso.getTime())) return iso;
+
+  // Thử format "HH:mm DD/MM/YYYY" (output của fmtIso/fmtTimestamp)
+  const m = raw.match(/^(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const [, hh, mm, dd, mo, yyyy] = m;
+    // Tạo Date theo múi giờ UTC+7 (VN)
+    const utc = Date.UTC(+yyyy, +mo - 1, +dd, +hh - 7, +mm);
+    const d = new Date(utc);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return null;
+}
+
 function calcStats(all: Tracking[]): PersonalStats {
   const active = all.filter(t => !t.is_archived);
   const delivered = all.filter(t => t.is_delivered ||
@@ -52,14 +79,15 @@ function calcStats(all: Tracking[]): PersonalStats {
   const ghnDelivered = delivered.filter(t => t.carrier === "ghn").length;
   const spxDelivered = delivered.filter(t => t.carrier === "spx").length;
 
-  // Tính số ngày giao: từ created_at đến last_status_time (chính xác hơn last_checked_at)
+  // Tính số ngày giao: từ created_at đến last_status_time
+  // last_status_time có thể là ISO hoặc "HH:mm DD/MM/YYYY" → dùng parseStatusTime
   const deliveryDays = delivered
-    .filter(t => t.created_at && (t.last_status_time || t.last_checked_at))
+    .filter(t => t.created_at)
     .map(t => {
-      const end = t.last_status_time
-        ? new Date(t.last_status_time).getTime()
-        : new Date(t.last_checked_at!).getTime();
-      return Math.floor((end - new Date(t.created_at).getTime()) / 86400000);
+      const endDate = parseStatusTime(t.last_status_time) ?? parseStatusTime(t.last_checked_at);
+      if (!endDate) return -1;
+      const days = Math.floor((endDate.getTime() - new Date(t.created_at).getTime()) / 86400000);
+      return days;
     })
     .filter(d => d >= 0 && d <= 60);
 
