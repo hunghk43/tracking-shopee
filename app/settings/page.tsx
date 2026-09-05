@@ -30,27 +30,42 @@ interface PersonalStats {
 /**
  * Parse last_status_time từ DB — có thể là:
  * 1. ISO string: "2026-08-15T10:30:00.000Z"
- * 2. Format VN từ fmtIso/fmtTimestamp: "10:30 15/08/2026"
+ * 2. Format VN từ fmtIso/fmtTimestamp: "10:30 15/08/2026" hoặc "10:30 15/8/2026"
  * 3. Chuỗi khác không parse được → trả null
  */
 function parseStatusTime(raw: string | null | undefined): Date | null {
   if (!raw) return null;
 
-  // Thử ISO trước
+  // Thử ISO trước (YYYY-MM-DD... hoặc các format JS parse được)
   const iso = new Date(raw);
   if (!isNaN(iso.getTime())) return iso;
 
-  // Thử format "HH:mm DD/MM/YYYY" (output của fmtIso/fmtTimestamp)
+  // Thử format "H:mm DD/MM/YYYY" hoặc "HH:mm DD/MM/YYYY" (output của fmtIso/fmtTimestamp VN)
+  // VD: "10:30 15/08/2026", "9:05 5/8/2026"
   const m = raw.match(/^(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
-    const [, hh, mm, dd, mo, yyyy] = m;
-    // Tạo Date theo múi giờ UTC+7 (VN)
-    const utc = Date.UTC(+yyyy, +mo - 1, +dd, +hh - 7, +mm);
-    const d = new Date(utc);
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const dd = parseInt(m[3], 10);
+    const mo = parseInt(m[4], 10);
+    const yyyy = parseInt(m[5], 10);
+    // Tạo Date dạng UTC, đã trừ 7h để bù múi giờ VN (UTC+7)
+    const utcMs = Date.UTC(yyyy, mo - 1, dd, hh - 7, mm);
+    const d = new Date(utcMs);
     if (!isNaN(d.getTime())) return d;
   }
 
   return null;
+}
+
+/** Số ngày giữa 2 mốc thời gian, tính theo ngày calendar VN (không phải 24h chính xác) */
+function daysBetweenVN(from: Date, to: Date): number {
+  // Chuyển sang ngày VN (UTC+7) rồi so sánh ngày
+  const toVNDay = (d: Date) => {
+    const vn = new Date(d.getTime() + 7 * 3600 * 1000);
+    return Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate());
+  };
+  return Math.round((toVNDay(to) - toVNDay(from)) / 86400000);
 }
 
 function calcStats(all: Tracking[]): PersonalStats {
@@ -80,16 +95,15 @@ function calcStats(all: Tracking[]): PersonalStats {
   const spxDelivered = delivered.filter(t => t.carrier === "spx").length;
 
   // Tính số ngày giao: từ created_at đến last_status_time
-  // last_status_time có thể là ISO hoặc "HH:mm DD/MM/YYYY" → dùng parseStatusTime
+  // CHỈ dùng last_status_time — không fallback last_checked_at vì đó là ngày cron check, không phải ngày giao
   const deliveryDays = delivered
-    .filter(t => t.created_at)
+    .filter(t => t.created_at && t.last_status_time)
     .map(t => {
-      const endDate = parseStatusTime(t.last_status_time) ?? parseStatusTime(t.last_checked_at);
+      const endDate = parseStatusTime(t.last_status_time);
       if (!endDate) return -1;
-      const days = Math.floor((endDate.getTime() - new Date(t.created_at).getTime()) / 86400000);
-      return days;
+      return daysBetweenVN(new Date(t.created_at), endDate);
     })
-    .filter(d => d >= 0 && d <= 60);
+    .filter(d => d >= 0 && d <= 30); // SPX/GHN không thể lâu hơn 30 ngày
 
   const avgDeliveryDays = deliveryDays.length > 0
     ? Math.round(deliveryDays.reduce((a, b) => a + b, 0) / deliveryDays.length)
